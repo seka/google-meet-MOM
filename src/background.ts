@@ -1,9 +1,11 @@
-import { DEFAULT_SETTINGS, type RecordingState } from "./types";
+import { DEFAULT_SETTINGS, type RecordingState, type SpeakerEvent } from "./types";
 import { updateRecording } from "./db";
 import type { ExtensionMessage } from "./messages";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;
+let recordingStartTime = 0;
+let meetTabId: number | null = null;
 
 // SW が録音中に終了しないよう定期アラームで維持
 void chrome.alarms.create("keepalive", { periodInMinutes: 0.2 });
@@ -39,6 +41,19 @@ function setState(state: RecordingState, extra: Record<string, unknown> = {}): v
     },
     () => {},
   );
+}
+
+async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
+  if (!meetTabId) return [];
+  return new Promise((resolve) => {
+    chrome.tabs.sendMessage(meetTabId!, { type: "GET_SPEAKER_EVENTS" }, (res) => {
+      if (chrome.runtime.lastError || !res) {
+        resolve([]);
+        return;
+      }
+      resolve((res as { speakerEvents: SpeakerEvent[] }).speakerEvents ?? []);
+    });
+  });
 }
 
 async function generateMinutes(transcript: string, recordingId: string): Promise<void> {
@@ -91,11 +106,24 @@ chrome.runtime.onMessage.addListener(
         case "START_RECORDING": {
           try {
             await ensureOffscreenDocument();
+
+            recordingStartTime = Date.now();
+            meetTabId = message.payload.tabId ?? null;
+
+            // content script に話者追跡を開始させる
+            if (meetTabId) {
+              chrome.tabs.sendMessage(
+                meetTabId,
+                { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
+                () => {},
+              );
+            }
+
             chrome.runtime.sendMessage(
               {
                 type: "FORWARD_TO_OFFSCREEN",
                 target: "offscreen",
-                payload: message.payload,
+                payload: { ...message.payload, recordingStartTime },
               },
               () => {},
             );
@@ -110,15 +138,19 @@ chrome.runtime.onMessage.addListener(
         }
 
         case "STOP_RECORDING": {
+          setState("transcribing");
+          sendResponse({ ok: true });
+
+          // content から話者イベントを収集してから offscreen に渡す
+          const speakerEvents = await collectSpeakerEvents();
           chrome.runtime.sendMessage(
             {
               type: "OFFSCREEN_STOP",
               target: "offscreen",
+              payload: { speakerEvents, recordingStartTime },
             },
             () => {},
           );
-          setState("transcribing");
-          sendResponse({ ok: true });
           break;
         }
 

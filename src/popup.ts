@@ -100,7 +100,7 @@ recordBtn.addEventListener("click", async () => {
     {
       type: "START_RECORDING",
       target: "background",
-      payload: { streamId, meetingTitle, settings },
+      payload: { streamId, meetingTitle, settings, tabId: meetTab.id },
     },
     () => {},
   );

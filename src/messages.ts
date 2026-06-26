@@ -1,4 +1,4 @@
-import type { ExtensionSettings, RecordingState } from "./types";
+import type { ExtensionSettings, RecordingState, SpeakerEvent } from "./types";
 
 export type MessageTarget = "background" | "offscreen";
 
@@ -10,7 +10,7 @@ export interface BaseMessage {
 export interface StartRecordingMsg extends BaseMessage {
   type: "START_RECORDING";
   target: "background";
-  payload: { streamId: string; meetingTitle: string; settings: ExtensionSettings };
+  payload: { streamId: string; meetingTitle: string; settings: ExtensionSettings; tabId: number };
 }
 
 export interface StopRecordingMsg extends BaseMessage {
@@ -21,12 +21,33 @@ export interface StopRecordingMsg extends BaseMessage {
 export interface ForwardToOffscreenMsg extends BaseMessage {
   type: "FORWARD_TO_OFFSCREEN";
   target: "offscreen";
-  payload: { streamId: string; meetingTitle: string; settings: ExtensionSettings };
+  payload: {
+    streamId: string;
+    meetingTitle: string;
+    settings: ExtensionSettings;
+    tabId: number;
+    recordingStartTime: number;
+  };
+}
+
+export interface StartSpeakerTrackingMsg extends BaseMessage {
+  type: "START_SPEAKER_TRACKING";
+  payload: { recordingStartTime: number };
+}
+
+export interface GetSpeakerEventsMsg extends BaseMessage {
+  type: "GET_SPEAKER_EVENTS";
+}
+
+export interface SpeakerEventsMsg extends BaseMessage {
+  type: "SPEAKER_EVENTS";
+  payload: { speakerEvents: SpeakerEvent[] };
 }
 
 export interface OffscreenStopMsg extends BaseMessage {
   type: "OFFSCREEN_STOP";
   target: "offscreen";
+  payload: { speakerEvents: SpeakerEvent[]; recordingStartTime: number };
 }
 
 export interface GetStateMsg extends BaseMessage {
@@ -70,4 +91,7 @@ export type ExtensionMessage =
   | TranscriptionProgressMsg
   | TranscriptionDoneMsg
   | RecordingSavedMsg
-  | ErrorMsg;
+  | ErrorMsg
+  | StartSpeakerTrackingMsg
+  | GetSpeakerEventsMsg
+  | SpeakerEventsMsg;

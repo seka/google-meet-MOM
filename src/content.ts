@@ -1,3 +1,5 @@
+import type { SpeakerEvent } from "./types";
+
 function getMeetingTitle(): string {
   const selectors = ["[data-meeting-title]", 'c-wiz [jsname="r4nke"]', '[jsname="ZaFQO"]'];
 
@@ -9,14 +11,83 @@ function getMeetingTitle(): string {
   return document.title.replace(" - Google Meet", "").trim() || "Google Meet";
 }
 
+// Google Meet のアクティブスピーカー名を取得する。
+// Meet の DOM は変更されることがあるため複数のセレクタを試し、どれも一致しなければ null を返す。
+function getActiveSpeaker(): string | null {
+  const candidates = [
+    // ピン留めされていないアクティブスピーカータイル内の名前
+    '[data-participant-id][data-is-speaking="true"] [data-self-name]',
+    '[data-participant-id][data-is-speaking="true"] [jsname="r4nke"]',
+    // 発言インジケーターが付いているタイルの aria-label（"田中 太郎 が話しています" 形式）
+    '[jsname="EydYod"][aria-label*="話しています"]',
+    '[jsname="EydYod"][aria-label*="is speaking"]',
+  ];
+
+  for (const sel of candidates) {
+    const el = document.querySelector(sel);
+    if (!el) continue;
+
+    // aria-label から名前部分のみ抽出（"○○ が話しています" → "○○"）
+    const label = el.getAttribute("aria-label");
+    if (label) {
+      return label.replace(/\s*(が話しています|is speaking).*$/i, "").trim() || null;
+    }
+
+    const text = el.textContent?.trim();
+    if (text) return text;
+  }
+
+  return null;
+}
+
+let speakerEvents: SpeakerEvent[] = [];
+let observer: MutationObserver | null = null;
+
+function startSpeakerTracking(_startTime: number): void {
+  speakerEvents = [];
+
+  observer = new MutationObserver(() => {
+    const name = getActiveSpeaker();
+    if (!name) return;
+    const last = speakerEvents[speakerEvents.length - 1];
+    if (!last || last.name !== name) {
+      speakerEvents.push({ name, absoluteTime: Date.now() });
+    }
+  });
+
+  observer.observe(document.body, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["data-is-speaking", "aria-label", "class"],
+    childList: true,
+  });
+}
+
+function stopSpeakerTracking(): void {
+  observer?.disconnect();
+  observer = null;
+}
+
 chrome.runtime.onMessage.addListener(
   (
-    message: { type: string },
+    message: { type: string; payload?: Record<string, unknown> },
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: unknown) => void,
   ) => {
-    if (message.type === "GET_MEETING_TITLE") {
-      sendResponse({ title: getMeetingTitle() });
+    switch (message.type) {
+      case "GET_MEETING_TITLE":
+        sendResponse({ title: getMeetingTitle() });
+        return false;
+
+      case "START_SPEAKER_TRACKING":
+        startSpeakerTracking((message.payload?.recordingStartTime as number) ?? Date.now());
+        sendResponse({ ok: true });
+        return false;
+
+      case "GET_SPEAKER_EVENTS":
+        stopSpeakerTracking();
+        sendResponse({ speakerEvents });
+        return false;
     }
     return false;
   },

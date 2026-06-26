@@ -29,3 +29,8 @@ export type RecordingState =
   | "summarizing"
   | "done"
   | "error";
+
+export interface SpeakerEvent {
+  name: string;
+  absoluteTime: number; // Date.now() の絶対タイムスタンプ
+}
