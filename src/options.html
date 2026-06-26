@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設定 — Google Meet MOM</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 32px 16px;
+      color: #111827;
+      background: #f9fafb;
+    }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+    .field { margin-bottom: 20px; }
+    label { display: block; font-weight: 500; margin-bottom: 4px; }
+    .hint { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+    button {
+      padding: 8px 20px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    #saved-msg { font-size: 13px; color: #065f46; margin-left: 12px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Google Meet MOM 設定</h1>
+
+  <div class="field">
+    <label for="ollama-url">Ollama URL</label>
+    <input type="url" id="ollama-url" placeholder="http://localhost:11434">
+    <p class="hint">ローカルで起動している Ollama のエンドポイント</p>
+  </div>
+
+  <div class="field">
+    <label for="ollama-model">Ollama モデル</label>
+    <input type="text" id="ollama-model" placeholder="llama3.2">
+    <p class="hint">例: llama3.2, mistral, gemma2</p>
+  </div>
+
+  <div class="field">
+    <label for="whisper-model">Whisper モデル</label>
+    <select id="whisper-model">
+      <option value="onnx-community/whisper-tiny">whisper-tiny（高速、低精度）</option>
+      <option value="onnx-community/whisper-base">whisper-base（バランス）</option>
+      <option value="onnx-community/whisper-small">whisper-small（高精度、低速）</option>
+    </select>
+    <p class="hint">初回使用時にモデルをダウンロードします（tiny: ~150MB）</p>
+  </div>
+
+  <div class="field">
+    <label for="language">文字起こし言語</label>
+    <select id="language">
+      <option value="ja">日本語</option>
+      <option value="en">英語</option>
+    </select>
+  </div>
+
+  <button id="save-btn">保存</button>
+  <span id="saved-msg">保存しました</span>
+
+  <script type="module" src="./options.ts"></script>
+</body>
+</html>
