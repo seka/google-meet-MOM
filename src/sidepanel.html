@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Google Meet MOM</title>
+    <link rel="stylesheet" href="./sidepanel.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Google Meet MOM</h1>
+        <span id="status-badge" class="badge badge-idle">待機中</span>
+      </header>
+
+      <section id="controls">
+        <button id="record-btn" class="btn btn-primary">録音開始</button>
+        <p id="status-message"></p>
+      </section>
+
+      <section id="log-section">
+        <div class="section-header">
+          <span class="section-title">発言ログ</span>
+          <span id="processing-indicator" class="badge badge-transcribing" hidden
+            >文字起こし中...</span
+          >
+        </div>
+        <div id="log-content" class="log-area">
+          <p id="log-placeholder" class="placeholder">
+            録音を開始すると、発言内容が順次表示されます。
+          </p>
+        </div>
+      </section>
+
+      <section id="result-section" hidden>
+        <div class="section-header">
+          <span class="section-title">最終トランスクリプト</span>
+        </div>
+        <nav class="tabs">
+          <button class="tab active" data-tab="transcript">文字起こし</button>
+          <button class="tab" data-tab="minutes">議事録</button>
+        </nav>
+
+        <div id="transcript-tab" class="tab-content">
+          <pre id="transcript-text"></pre>
+        </div>
+        <div id="minutes-tab" class="tab-content" hidden>
+          <pre id="minutes-text"></pre>
+        </div>
+
+        <div class="actions">
+          <button id="copy-btn" class="btn btn-secondary">コピー</button>
+          <button id="download-btn" class="btn btn-secondary">ダウンロード</button>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <a href="#" id="open-options">設定</a>
+    </footer>
+
+    <script type="module" src="./sidepanel.ts"></script>
+  </body>
+</html>

@@ -23,7 +23,7 @@ export default defineConfig({
         background: resolve(__dirname, "src/background.ts"),
         content: resolve(__dirname, "src/content.ts"),
         offscreen: resolve(__dirname, "src/offscreen.html"),
-        popup: resolve(__dirname, "src/popup.html"),
+        sidepanel: resolve(__dirname, "src/sidepanel.html"),
         options: resolve(__dirname, "src/options.html"),
       },
       output: {
