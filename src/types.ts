@@ -13,6 +13,7 @@ export interface ExtensionSettings {
   ollamaModel: string;
   whisperModel: string;
   language: string;
+  chunkIntervalSec: number;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   ollamaModel: "llama3.2",
   whisperModel: "onnx-community/whisper-tiny",
   language: "ja",
+  chunkIntervalSec: 15,
 };
 
 export type RecordingState =

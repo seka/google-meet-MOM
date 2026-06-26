@@ -106,6 +106,18 @@
       </select>
     </div>
 
+    <div class="field">
+      <label for="chunk-interval">発言ログの更新間隔</label>
+      <select id="chunk-interval">
+        <option value="10">10 秒</option>
+        <option value="15">15 秒（推奨）</option>
+        <option value="20">20 秒</option>
+        <option value="30">30 秒</option>
+        <option value="60">60 秒</option>
+      </select>
+      <p class="hint">短いほどリアルタイムに近いが、精度が下がる場合があります</p>
+    </div>
+
     <button id="save-btn">保存</button>
     <span id="saved-msg">保存しました</span>
 

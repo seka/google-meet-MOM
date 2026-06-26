@@ -4,6 +4,7 @@ const ollamaUrl = document.getElementById("ollama-url") as HTMLInputElement;
 const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;
 const whisperModel = document.getElementById("whisper-model") as HTMLSelectElement;
 const language = document.getElementById("language") as HTMLSelectElement;
+const chunkInterval = document.getElementById("chunk-interval") as HTMLSelectElement;
 const saveBtn = document.getElementById("save-btn") as HTMLButtonElement;
 const savedMsg = document.getElementById("saved-msg") as HTMLSpanElement;
 
@@ -13,6 +14,7 @@ async function load(): Promise<void> {
   ollamaModel.value = s["ollamaModel"] as string;
   whisperModel.value = s["whisperModel"] as string;
   language.value = s["language"] as string;
+  chunkInterval.value = String(s["chunkIntervalSec"]);
 }
 
 saveBtn.addEventListener("click", async () => {
@@ -21,6 +23,7 @@ saveBtn.addEventListener("click", async () => {
     ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
     whisperModel: whisperModel.value,
     language: language.value,
+    chunkIntervalSec: Number(chunkInterval.value),
   });
 
   savedMsg.style.display = "inline";
