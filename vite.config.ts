@@ -1,30 +1,39 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { defineConfig } from "vite-plus";
+import { resolve } from "path";
 
 export default defineConfig({
-  root: resolve(__dirname, 'src'),
-  publicDir: resolve(__dirname, 'public'),
+  staged: {
+    "*": "vp check --fix",
+  },
+  fmt: {},
+  lint: {
+    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    rules: { "vite-plus/prefer-vite-plus-imports": "error" },
+    options: { typeAware: true, typeCheck: true },
+  },
+  root: resolve(__dirname, "src"),
+  publicDir: resolve(__dirname, "public"),
   build: {
-    outDir: resolve(__dirname, 'dist'),
+    outDir: resolve(__dirname, "dist"),
     emptyOutDir: true,
-    target: 'es2020',
+    target: "es2020",
     minify: false,
     rollupOptions: {
       input: {
-        background: resolve(__dirname, 'src/background.ts'),
-        content: resolve(__dirname, 'src/content.ts'),
-        offscreen: resolve(__dirname, 'src/offscreen.html'),
-        popup: resolve(__dirname, 'src/popup.html'),
-        options: resolve(__dirname, 'src/options.html'),
+        background: resolve(__dirname, "src/background.ts"),
+        content: resolve(__dirname, "src/content.ts"),
+        offscreen: resolve(__dirname, "src/offscreen.html"),
+        popup: resolve(__dirname, "src/popup.html"),
+        options: resolve(__dirname, "src/options.html"),
       },
       output: {
-        entryFileNames: '[name].js',
-        chunkFileNames: 'chunks/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        entryFileNames: "[name].js",
+        chunkFileNames: "chunks/[name].js",
+        assetFileNames: "assets/[name][extname]",
       },
     },
   },
   optimizeDeps: {
-    exclude: ['@huggingface/transformers'],
+    exclude: ["@huggingface/transformers"],
   },
-})
+});

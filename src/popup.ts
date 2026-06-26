@@ -1,156 +1,163 @@
-import type { RecordingState } from './types'
-import type { ExtensionMessage } from './messages'
-import { DEFAULT_SETTINGS } from './types'
+import type { RecordingState } from "./types";
+import type { ExtensionMessage } from "./messages";
+import { DEFAULT_SETTINGS } from "./types";
 
-const recordBtn = document.getElementById('record-btn') as HTMLButtonElement
-const statusBadge = document.getElementById('status-badge') as HTMLSpanElement
-const statusMessage = document.getElementById('status-message') as HTMLParagraphElement
-const resultSection = document.getElementById('result-section') as HTMLElement
-const transcriptText = document.getElementById('transcript-text') as HTMLPreElement
-const minutesText = document.getElementById('minutes-text') as HTMLPreElement
-const copyBtn = document.getElementById('copy-btn') as HTMLButtonElement
-const downloadBtn = document.getElementById('download-btn') as HTMLButtonElement
-const openOptions = document.getElementById('open-options') as HTMLAnchorElement
+const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
+const statusBadge = document.getElementById("status-badge") as HTMLSpanElement;
+const statusMessage = document.getElementById("status-message") as HTMLParagraphElement;
+const resultSection = document.getElementById("result-section") as HTMLElement;
+const transcriptText = document.getElementById("transcript-text") as HTMLPreElement;
+const minutesText = document.getElementById("minutes-text") as HTMLPreElement;
+const copyBtn = document.getElementById("copy-btn") as HTMLButtonElement;
+const downloadBtn = document.getElementById("download-btn") as HTMLButtonElement;
+const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
 
-let currentState: RecordingState = 'idle'
-let currentTab: 'transcript' | 'minutes' = 'transcript'
+let currentState: RecordingState = "idle";
+let currentTab: "transcript" | "minutes" = "transcript";
 
-function updateUI(state: RecordingState, message = ''): void {
-  currentState = state
+function updateUI(state: RecordingState, message = ""): void {
+  currentState = state;
 
   const labels: Record<RecordingState, string> = {
-    idle: '待機中',
-    recording: '録音中',
-    transcribing: '文字起こし中',
-    summarizing: '議事録作成中',
-    done: '完了',
-    error: 'エラー',
-  }
+    idle: "待機中",
+    recording: "録音中",
+    transcribing: "文字起こし中",
+    summarizing: "議事録作成中",
+    done: "完了",
+    error: "エラー",
+  };
 
-  statusBadge.textContent = labels[state]
-  statusBadge.className = `badge badge-${state}`
-  statusMessage.textContent = message
+  statusBadge.textContent = labels[state];
+  statusBadge.className = `badge badge-${state}`;
+  statusMessage.textContent = message;
 
-  if (state === 'idle' || state === 'done' || state === 'error') {
-    recordBtn.textContent = '録音開始'
-    recordBtn.classList.remove('recording')
-    recordBtn.disabled = false
-  } else if (state === 'recording') {
-    recordBtn.textContent = '録音停止'
-    recordBtn.classList.add('recording')
-    recordBtn.disabled = false
+  if (state === "idle" || state === "done" || state === "error") {
+    recordBtn.textContent = "録音開始";
+    recordBtn.classList.remove("recording");
+    recordBtn.disabled = false;
+  } else if (state === "recording") {
+    recordBtn.textContent = "録音停止";
+    recordBtn.classList.add("recording");
+    recordBtn.disabled = false;
   } else {
-    recordBtn.disabled = true
-    recordBtn.textContent = '処理中...'
+    recordBtn.disabled = true;
+    recordBtn.textContent = "処理中...";
   }
 }
 
-function switchTab(tab: 'transcript' | 'minutes'): void {
-  currentTab = tab
-  document.querySelectorAll<HTMLButtonElement>('.tab').forEach((el) => {
-    el.classList.toggle('active', el.dataset.tab === tab)
-  })
-  ;(document.getElementById('transcript-tab') as HTMLElement).hidden = tab !== 'transcript'
-  ;(document.getElementById('minutes-tab') as HTMLElement).hidden = tab !== 'minutes'
+function switchTab(tab: "transcript" | "minutes"): void {
+  currentTab = tab;
+  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((el) => {
+    el.classList.toggle("active", el.dataset.tab === tab);
+  });
+  (document.getElementById("transcript-tab") as HTMLElement).hidden = tab !== "transcript";
+  (document.getElementById("minutes-tab") as HTMLElement).hidden = tab !== "minutes";
 }
 
-document.querySelectorAll<HTMLButtonElement>('.tab').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    switchTab(btn.dataset.tab as 'transcript' | 'minutes')
-  })
-})
+document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    switchTab(btn.dataset.tab as "transcript" | "minutes");
+  });
+});
 
-recordBtn.addEventListener('click', async () => {
-  if (currentState === 'recording') {
-    chrome.runtime.sendMessage({ type: 'STOP_RECORDING', target: 'background' }, () => {})
-    return
+recordBtn.addEventListener("click", async () => {
+  if (currentState === "recording") {
+    chrome.runtime.sendMessage({ type: "STOP_RECORDING", target: "background" }, () => {});
+    return;
   }
 
-  if (currentState !== 'idle' && currentState !== 'done' && currentState !== 'error') return
+  if (currentState !== "idle" && currentState !== "done" && currentState !== "error") return;
 
-  updateUI('recording', '')
+  updateUI("recording", "");
 
   // popup から getMediaStreamId を呼ぶ（ユーザーのジェスチャー保証）
   const [meetTab] = await chrome.tabs.query({
     active: true,
     currentWindow: true,
-    url: 'https://meet.google.com/*',
-  })
+    url: "https://meet.google.com/*",
+  });
 
   if (!meetTab?.id) {
-    updateUI('error', 'Google Meet のタブが見つかりません')
-    return
+    updateUI("error", "Google Meet のタブが見つかりません");
+    return;
   }
 
-  let meetingTitle = 'Google Meet'
+  let meetingTitle = "Google Meet";
   try {
-    const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: 'GET_MEETING_TITLE' })
-    meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle
+    const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: "GET_MEETING_TITLE" });
+    meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle;
   } catch {
     // content script が応答しない場合はスキップ
   }
 
   const streamId = await new Promise<string>((resolve) => {
-    chrome.tabCapture.getMediaStreamId({ targetTabId: meetTab.id }, resolve)
-  })
+    chrome.tabCapture.getMediaStreamId({ targetTabId: meetTab.id }, resolve);
+  });
 
-  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS)
+  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
-  chrome.runtime.sendMessage({
-    type: 'START_RECORDING',
-    target: 'background',
-    payload: { streamId, meetingTitle, settings },
-  }, () => {})
-})
+  chrome.runtime.sendMessage(
+    {
+      type: "START_RECORDING",
+      target: "background",
+      payload: { streamId, meetingTitle, settings },
+    },
+    () => {},
+  );
+});
 
-copyBtn.addEventListener('click', () => {
-  const text = currentTab === 'transcript' ? transcriptText.textContent : minutesText.textContent
-  if (text) navigator.clipboard.writeText(text)
-})
+copyBtn.addEventListener("click", () => {
+  const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
+  if (text) void navigator.clipboard.writeText(text);
+});
 
-downloadBtn.addEventListener('click', () => {
-  const text = currentTab === 'transcript' ? transcriptText.textContent : minutesText.textContent
-  const filename = currentTab === 'transcript' ? 'transcript.txt' : 'minutes.md'
-  if (!text) return
-  const blob = new Blob([text], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-})
+downloadBtn.addEventListener("click", () => {
+  const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
+  const filename = currentTab === "transcript" ? "transcript.txt" : "minutes.md";
+  if (!text) return;
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
-openOptions.addEventListener('click', (e) => {
-  e.preventDefault()
-  chrome.runtime.openOptionsPage()
-})
+openOptions.addEventListener("click", (e) => {
+  e.preventDefault();
+  void chrome.runtime.openOptionsPage();
+});
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
-  if (message.type === 'STATE_CHANGED') {
-    const { state, minutes, message: msg } = message.payload as {
-      state: RecordingState
-      minutes?: string
-      message?: string
-    }
+  if (message.type === "STATE_CHANGED") {
+    const {
+      state,
+      minutes,
+      message: msg,
+    } = message.payload as {
+      state: RecordingState;
+      minutes?: string;
+      message?: string;
+    };
 
-    updateUI(state, msg ?? '')
+    updateUI(state, msg ?? "");
 
-    if (state === 'done' && minutes) {
-      minutesText.textContent = minutes
-      resultSection.hidden = false
-      switchTab('minutes')
+    if (state === "done" && minutes) {
+      minutesText.textContent = minutes;
+      resultSection.hidden = false;
+      switchTab("minutes");
     }
   }
 
-  if (message.type === 'TRANSCRIPTION_DONE') {
-    const { transcript } = (message as { payload: { transcript: string } }).payload
-    transcriptText.textContent = transcript
-    resultSection.hidden = false
-    switchTab('transcript')
+  if (message.type === "TRANSCRIPTION_DONE") {
+    const { transcript } = (message as { payload: { transcript: string } }).payload;
+    transcriptText.textContent = transcript;
+    resultSection.hidden = false;
+    switchTab("transcript");
   }
-})
+});
 
-chrome.runtime.sendMessage({ type: 'GET_STATE' }, (res: { state: RecordingState } | null) => {
-  if (res) updateUI(res.state)
-})
+chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState } | null) => {
+  if (res) updateUI(res.state);
+});
