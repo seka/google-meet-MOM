@@ -81,6 +81,12 @@ export interface ErrorMsg extends BaseMessage {
   payload: { message: string };
 }
 
+export interface TranscriptChunkMsg extends BaseMessage {
+  type: "TRANSCRIPT_CHUNK";
+  target: "background";
+  payload: { text: string; chunkIndex: number };
+}
+
 export type ExtensionMessage =
   | StartRecordingMsg
   | StopRecordingMsg
@@ -94,4 +100,5 @@ export type ExtensionMessage =
   | ErrorMsg
   | StartSpeakerTrackingMsg
   | GetSpeakerEventsMsg
-  | SpeakerEventsMsg;
+  | SpeakerEventsMsg
+  | TranscriptChunkMsg;

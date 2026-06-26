@@ -20,6 +20,12 @@ let audioChunks: Blob[] = [];
 let whisperPipeline: ASRPipeline | null = null;
 let currentMeetingTitle = "Google Meet";
 
+// チャンク処理の状態
+let processedChunkCount = 0;
+let isProcessingChunk = false;
+let chunkIntervalId: ReturnType<typeof setInterval> | null = null;
+let pendingSettings: ExtensionSettings | null = null;
+
 async function loadWhisper(model: string): Promise<ASRPipeline> {
   if (!whisperPipeline) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,8 +46,79 @@ async function loadWhisper(model: string): Promise<ASRPipeline> {
   return whisperPipeline;
 }
 
-async function startRecording(streamId: string, meetingTitle: string): Promise<void> {
+async function decodeAndResample(blob: Blob): Promise<Float32Array> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioCtx = new AudioContext();
+  const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const targetSampleRate = 16000;
+  const offlineCtx = new OfflineAudioContext(
+    1,
+    Math.ceil(decoded.duration * targetSampleRate),
+    targetSampleRate,
+  );
+  const source = offlineCtx.createBufferSource();
+  source.buffer = decoded;
+  source.connect(offlineCtx.destination);
+  source.start();
+  const resampled = await offlineCtx.startRendering();
+  return resampled.getChannelData(0);
+}
+
+// 話者ラベルなしの高速転写（録音中のプレビュー用）
+async function transcribeChunk(blob: Blob, settings: ExtensionSettings): Promise<string> {
+  const audioData = await decodeAndResample(blob);
+  const asr = await loadWhisper(settings.whisperModel);
+  const result = await asr(audioData, {
+    language: settings.language === "ja" ? "japanese" : "english",
+    task: "transcribe",
+    chunk_length_s: 30,
+    stride_length_s: 5,
+  });
+  const singleResult = Array.isArray(result) ? result[0] : result;
+  return singleResult?.text ?? "";
+}
+
+// 設定間隔ごとに蓄積チャンクを処理してサイドパネルへ送信
+async function processNextChunk(): Promise<void> {
+  if (!pendingSettings) return;
+  const WINDOW = pendingSettings.chunkIntervalSec; // 1秒チャンク × N秒分
+  const available = audioChunks.length - processedChunkCount;
+  if (available < WINDOW || isProcessingChunk) return;
+
+  isProcessingChunk = true;
+  const startIdx = processedChunkCount;
+  const window = audioChunks.slice(startIdx, startIdx + WINDOW);
+  processedChunkCount += WINDOW;
+
+  try {
+    const blob = new Blob(window, { type: "audio/webm;codecs=opus" });
+    const text = await transcribeChunk(blob, pendingSettings);
+    chrome.runtime.sendMessage(
+      {
+        type: "TRANSCRIPT_CHUNK",
+        target: "background",
+        payload: { text, chunkIndex: Math.floor(startIdx / WINDOW) },
+      },
+      () => {},
+    );
+  } catch {
+    // 失敗した場合はカーソルを戻して次回リトライ
+    processedChunkCount = startIdx;
+  } finally {
+    isProcessingChunk = false;
+  }
+}
+
+async function startRecording(
+  streamId: string,
+  meetingTitle: string,
+  settings: ExtensionSettings,
+): Promise<void> {
   currentMeetingTitle = meetingTitle;
+  pendingSettings = settings;
+  processedChunkCount = 0;
+  isProcessingChunk = false;
 
   const tabStream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -69,6 +146,10 @@ async function startRecording(streamId: string, meetingTitle: string): Promise<v
   };
 
   mediaRecorder.start(1000);
+
+  chunkIntervalId = setInterval(() => {
+    void processNextChunk();
+  }, settings.chunkIntervalSec * 1000);
 }
 
 // 話者イベントと Whisper のワードタイムスタンプを突き合わせてセグメント化したトランスクリプトを生成する
@@ -121,6 +202,15 @@ async function stopAndTranscribe(
 ): Promise<void> {
   if (!mediaRecorder) return;
 
+  // チャンクインターバルを停止し、処理中のチャンクが完了するまで待つ
+  if (chunkIntervalId) {
+    clearInterval(chunkIntervalId);
+    chunkIntervalId = null;
+  }
+  while (isProcessingChunk) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
+  }
+
   const recordingActualStart = recordingStartTime;
 
   return new Promise((resolve) => {
@@ -154,6 +244,7 @@ async function stopAndTranscribe(
   });
 }
 
+// 全音声を話者ラベル付きで転写（録音終了後の最終トランスクリプト）
 async function transcribe(
   audioBlob: Blob,
   recordingId: string,
@@ -162,24 +253,7 @@ async function transcribe(
   recordingStartTime: number,
 ): Promise<void> {
   try {
-    const arrayBuffer = await audioBlob.arrayBuffer();
-    const audioCtx = new AudioContext();
-    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
-
-    // 16kHz にリサンプル（Whisper が期待するサンプルレート）
-    const targetSampleRate = 16000;
-    const offlineCtx = new OfflineAudioContext(
-      1,
-      Math.ceil(decoded.duration * targetSampleRate),
-      targetSampleRate,
-    );
-    const source = offlineCtx.createBufferSource();
-    source.buffer = decoded;
-    source.connect(offlineCtx.destination);
-    source.start();
-    const resampled = await offlineCtx.startRendering();
-    const audioData = resampled.getChannelData(0);
-
+    const audioData = await decodeAndResample(audioBlob);
     const asr = await loadWhisper(settings.whisperModel);
 
     const result = await asr(audioData, {
@@ -231,8 +305,8 @@ chrome.runtime.onMessage.addListener(
     void (async () => {
       switch (message.type) {
         case "FORWARD_TO_OFFSCREEN": {
-          const { streamId, meetingTitle } = message.payload;
-          await startRecording(streamId, meetingTitle);
+          const { streamId, meetingTitle, settings } = message.payload;
+          await startRecording(streamId, meetingTitle, settings);
           sendResponse({ ok: true });
           break;
         }

@@ -7,6 +7,9 @@ let currentRecordingId: string | null = null;
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
 
+// アイコンクリックでサイドパネルを開く
+void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
 // SW が録音中に終了しないよう定期アラームで維持
 void chrome.alarms.create("keepalive", { periodInMinutes: 0.2 });
 chrome.alarms.onAlarm.addListener(() => {});
@@ -169,6 +172,15 @@ chrome.runtime.onMessage.addListener(
           currentRecordingId = recordingId;
           await generateMinutes(transcript, recordingId);
           await closeOffscreenDocument();
+          break;
+        }
+
+        case "TRANSCRIPT_CHUNK": {
+          // サイドパネルへ中継（target なしで全拡張ページにブロードキャスト）
+          chrome.runtime.sendMessage(
+            { type: "TRANSCRIPT_CHUNK", payload: message.payload },
+            () => {},
+          );
           break;
         }
 
