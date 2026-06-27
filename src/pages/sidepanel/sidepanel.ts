@@ -1,7 +1,12 @@
 import type { RecordingState } from "../../types";
 import { DEFAULT_SETTINGS } from "../../types";
+import { updateBadge } from "@core/components/atoms/badge";
+import { appendChunk, resetLog } from "@features/recording/components/log-section";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
+const btnLabel = document.getElementById("btn-label") as HTMLSpanElement;
+const iconMic = document.getElementById("icon-mic") as HTMLElement;
+const iconStop = document.getElementById("icon-stop") as HTMLElement;
 const statusBadge = document.getElementById("status-badge") as HTMLSpanElement;
 const statusMessage = document.getElementById("status-message") as HTMLParagraphElement;
 const logContent = document.getElementById("log-content") as HTMLDivElement;
@@ -17,59 +22,33 @@ const openOptions = document.getElementById("open-options") as HTMLAnchorElement
 let currentState: RecordingState = "idle";
 let currentTab: "transcript" | "minutes" = "transcript";
 
-const stateLabels: Record<RecordingState, string> = {
-  idle: "待機中",
-  recording: "録音中",
-  transcribing: "文字起こし中",
-  summarizing: "議事録作成中",
-  done: "完了",
-  error: "エラー",
-};
-
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
 
-  statusBadge.textContent = stateLabels[state];
-  statusBadge.className = `badge badge-${state}`;
+  updateBadge(statusBadge, state);
   statusMessage.textContent = message;
 
   if (state === "idle" || state === "done" || state === "error") {
-    recordBtn.textContent = "録音開始";
+    btnLabel.textContent = "録音開始";
+    iconMic.hidden = false;
+    iconStop.hidden = true;
     recordBtn.classList.remove("recording");
     recordBtn.disabled = false;
     processingIndicator.hidden = true;
   } else if (state === "recording") {
-    recordBtn.textContent = "録音停止";
+    btnLabel.textContent = "録音停止";
+    iconMic.hidden = true;
+    iconStop.hidden = false;
     recordBtn.classList.add("recording");
     recordBtn.disabled = false;
     processingIndicator.hidden = false;
   } else {
+    btnLabel.textContent = "処理中...";
+    iconMic.hidden = false;
+    iconStop.hidden = true;
     recordBtn.disabled = true;
-    recordBtn.textContent = "処理中...";
     processingIndicator.hidden = false;
   }
-}
-
-function appendChunk(text: string): void {
-  const trimmed = text.trim();
-  if (!trimmed) return;
-
-  logPlaceholder.hidden = true;
-
-  const p = document.createElement("p");
-  p.className = "log-chunk";
-  p.textContent = trimmed;
-  logContent.appendChild(p);
-  logContent.scrollTop = logContent.scrollHeight;
-}
-
-function resetLog(): void {
-  logContent.innerHTML = "";
-  logContent.appendChild(logPlaceholder);
-  logPlaceholder.hidden = false;
-  resultSection.hidden = true;
-  transcriptText.textContent = "";
-  minutesText.textContent = "";
 }
 
 function switchTab(tab: "transcript" | "minutes"): void {
@@ -95,7 +74,10 @@ recordBtn.addEventListener("click", async () => {
 
   if (currentState !== "idle" && currentState !== "done" && currentState !== "error") return;
 
-  resetLog();
+  resetLog(logContent, logPlaceholder);
+  resultSection.hidden = true;
+  transcriptText.textContent = "";
+  minutesText.textContent = "";
 
   const [meetTab] = await chrome.tabs.query({
     active: true,
@@ -158,7 +140,7 @@ openOptions.addEventListener("click", (e) => {
 chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
   if (message.type === "TRANSCRIPT_CHUNK") {
     const { text } = message.payload as { text: string; chunkIndex: number };
-    appendChunk(text);
+    appendChunk(logContent, logPlaceholder, text);
   }
 
   if (message.type === "STATE_CHANGED") {
