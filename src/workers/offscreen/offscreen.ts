@@ -1,7 +1,7 @@
 import { env, pipeline } from "@huggingface/transformers";
-import { saveRecording, updateRecording } from "./db";
-import type { ExtensionMessage } from "./messages";
-import type { ExtensionSettings, SpeakerEvent } from "./types";
+import { saveRecording, updateRecording } from "../../db";
+import type { ExtensionMessage } from "../../messages";
+import type { ExtensionSettings, SpeakerEvent } from "../../types";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 if (env.backends.onnx.wasm) {

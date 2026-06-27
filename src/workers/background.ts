@@ -1,6 +1,6 @@
-import { DEFAULT_SETTINGS, type RecordingState, type SpeakerEvent } from "./types";
-import { updateRecording } from "./db";
-import type { ExtensionMessage } from "./messages";
+import { DEFAULT_SETTINGS, type RecordingState, type SpeakerEvent } from "../types";
+import { updateRecording } from "../db";
+import type { ExtensionMessage } from "../messages";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;
@@ -21,7 +21,7 @@ async function ensureOffscreenDocument(): Promise<void> {
   if (contexts.length > 0) return;
 
   await chrome.offscreen.createDocument({
-    url: "offscreen.html",
+    url: "workers/offscreen/offscreen.html",
     reasons: [chrome.offscreen.Reason.USER_MEDIA],
     justification: "Recording Google Meet tab audio and microphone",
   });

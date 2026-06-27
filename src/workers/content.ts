@@ -1,4 +1,4 @@
-import type { SpeakerEvent } from "./types";
+import type { SpeakerEvent } from "../types";
 
 function getMeetingTitle(): string {
   const selectors = ["[data-meeting-title]", 'c-wiz [jsname="r4nke"]', '[jsname="ZaFQO"]'];

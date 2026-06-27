@@ -25,9 +25,9 @@
     "default_title": "Google Meet MOM"
   },
   "side_panel": {
-    "default_path": "sidepanel.html"
+    "default_path": "pages/sidepanel/sidepanel.html"
   },
-  "options_page": "options.html",
+  "options_page": "pages/options/options.html",
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co http://localhost:11434"
   }

@@ -6,7 +6,11 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["ES2020", "DOM"],
-    "types": ["chrome"]
+    "types": ["chrome"],
+    "paths": {
+      "@core/*": ["./src/core/*"],
+      "@features/*": ["./src/features/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

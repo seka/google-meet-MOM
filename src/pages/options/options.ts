@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from "./types";
+import { DEFAULT_SETTINGS } from "../../types";
 
 const ollamaUrl = document.getElementById("ollama-url") as HTMLInputElement;
 const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;

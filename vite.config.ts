@@ -13,6 +13,12 @@ export default defineConfig({
   },
   root: resolve(__dirname, "src"),
   publicDir: resolve(__dirname, "public"),
+  resolve: {
+    alias: {
+      "@core": resolve(__dirname, "src/core"),
+      "@features": resolve(__dirname, "src/features"),
+    },
+  },
   build: {
     outDir: resolve(__dirname, "dist"),
     emptyOutDir: true,
@@ -20,11 +26,11 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       input: {
-        background: resolve(__dirname, "src/background.ts"),
-        content: resolve(__dirname, "src/content.ts"),
-        offscreen: resolve(__dirname, "src/offscreen.html"),
-        sidepanel: resolve(__dirname, "src/sidepanel.html"),
-        options: resolve(__dirname, "src/options.html"),
+        background: resolve(__dirname, "src/workers/background.ts"),
+        content: resolve(__dirname, "src/workers/content.ts"),
+        offscreen: resolve(__dirname, "src/workers/offscreen/offscreen.html"),
+        sidepanel: resolve(__dirname, "src/pages/sidepanel/sidepanel.html"),
+        options: resolve(__dirname, "src/pages/options/options.html"),
       },
       output: {
         entryFileNames: "[name].js",

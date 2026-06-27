@@ -1,5 +1,5 @@
-import type { RecordingState } from "./types";
-import { DEFAULT_SETTINGS } from "./types";
+import type { RecordingState } from "../../types";
+import { DEFAULT_SETTINGS } from "../../types";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const statusBadge = document.getElementById("status-badge") as HTMLSpanElement;
@@ -17,19 +17,19 @@ const openOptions = document.getElementById("open-options") as HTMLAnchorElement
 let currentState: RecordingState = "idle";
 let currentTab: "transcript" | "minutes" = "transcript";
 
+const stateLabels: Record<RecordingState, string> = {
+  idle: "待機中",
+  recording: "録音中",
+  transcribing: "文字起こし中",
+  summarizing: "議事録作成中",
+  done: "完了",
+  error: "エラー",
+};
+
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
 
-  const labels: Record<RecordingState, string> = {
-    idle: "待機中",
-    recording: "録音中",
-    transcribing: "文字起こし中",
-    summarizing: "議事録作成中",
-    done: "完了",
-    error: "エラー",
-  };
-
-  statusBadge.textContent = labels[state];
+  statusBadge.textContent = stateLabels[state];
   statusBadge.className = `badge badge-${state}`;
   statusMessage.textContent = message;
 
