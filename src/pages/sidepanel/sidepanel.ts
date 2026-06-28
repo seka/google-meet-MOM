@@ -1,17 +1,16 @@
 import type { RecordingState } from "../../types";
 import { DEFAULT_SETTINGS } from "../../types";
-import { updateBadge } from "@core/components/atoms/badge";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
-const btnLabel = document.getElementById("btn-label") as HTMLSpanElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
 const iconStop = document.getElementById("icon-stop") as HTMLElement;
 const statusBadge = document.getElementById("status-badge") as HTMLSpanElement;
+const statusLabel = document.getElementById("status-label") as HTMLSpanElement;
+const statusSpinner = document.getElementById("status-spinner") as HTMLElement;
 const statusMessage = document.getElementById("status-message") as HTMLParagraphElement;
 const logContent = document.getElementById("log-content") as HTMLDivElement;
 const logPlaceholder = document.getElementById("log-placeholder") as HTMLParagraphElement;
-const processingIndicator = document.getElementById("processing-indicator") as HTMLSpanElement;
 const resultSection = document.getElementById("result-section") as HTMLElement;
 const transcriptText = document.getElementById("transcript-text") as HTMLPreElement;
 const minutesText = document.getElementById("minutes-text") as HTMLPreElement;
@@ -22,32 +21,46 @@ const openOptions = document.getElementById("open-options") as HTMLAnchorElement
 let currentState: RecordingState = "idle";
 let currentTab: "transcript" | "minutes" = "transcript";
 
+const STATE_LABELS: Record<RecordingState, string> = {
+  idle: "待機中",
+  recording: "録音中",
+  transcribing: "文字起こし中",
+  summarizing: "議事録作成中",
+  done: "完了",
+  error: "エラー",
+};
+
+const SPINNER_STATES = new Set<RecordingState>(["transcribing", "summarizing"]);
+
+const DEFAULT_MESSAGES: Partial<Record<RecordingState, string>> = {
+  recording: "Google Meet の音声を録音しています",
+  transcribing: "音声をテキストに変換しています...",
+  summarizing: "議事録を生成しています...",
+  done: "処理が完了しました",
+};
+
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
 
-  updateBadge(statusBadge, state);
-  statusMessage.textContent = message;
+  statusBadge.className = `badge badge-${state}`;
+  statusLabel.textContent = STATE_LABELS[state];
+  statusSpinner.classList.toggle("hidden", !SPINNER_STATES.has(state));
+  statusMessage.textContent = message || DEFAULT_MESSAGES[state] || "";
 
   if (state === "idle" || state === "done" || state === "error") {
-    btnLabel.textContent = "録音開始";
-    iconMic.hidden = false;
-    iconStop.hidden = true;
+    iconMic.classList.remove("hidden");
+    iconStop.classList.add("hidden");
     recordBtn.classList.remove("recording");
     recordBtn.disabled = false;
-    processingIndicator.hidden = true;
   } else if (state === "recording") {
-    btnLabel.textContent = "録音停止";
-    iconMic.hidden = true;
-    iconStop.hidden = false;
+    iconMic.classList.add("hidden");
+    iconStop.classList.remove("hidden");
     recordBtn.classList.add("recording");
     recordBtn.disabled = false;
-    processingIndicator.hidden = false;
   } else {
-    btnLabel.textContent = "処理中...";
-    iconMic.hidden = false;
-    iconStop.hidden = true;
+    iconMic.classList.remove("hidden");
+    iconStop.classList.add("hidden");
     recordBtn.disabled = true;
-    processingIndicator.hidden = false;
   }
 }
 
