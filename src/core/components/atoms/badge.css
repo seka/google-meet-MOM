@@ -10,8 +10,8 @@
 }
 
 .badge-idle {
-  background: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--border);
+  color: var(--text-muted);
 }
 
 .badge-recording {
@@ -31,8 +31,8 @@
 }
 
 .badge-done {
-  background: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--border);
+  color: var(--primary);
 }
 
 .badge-error {

@@ -17,10 +17,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --primary: #7ab87e;
+    --primary-hover: #6aaa6e;
     --surface: #1e2e1f;
     --bg: #141f14;
     --border: #2e4a2f;
     --text: #e2f0e3;
     --text-muted: #8fad91;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px 1px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 8px 3px rgba(0, 0, 0, 0.3);
   }
 }
