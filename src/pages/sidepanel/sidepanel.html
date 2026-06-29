@@ -7,10 +7,6 @@
   </head>
   <body>
     <div id="app">
-      <div id="status-bar">
-        <p id="status-message"></p>
-      </div>
-
       <section class="log-section" id="log-section">
         <div class="section-header">
           <span class="section-title">発言ログ</span>
@@ -30,6 +26,9 @@
             </svg>
             <span id="status-label">待機中</span>
           </span>
+        </div>
+        <div id="status-bar" class="hidden">
+          <p id="status-message"></p>
         </div>
         <div id="log-content" class="log-area">
           <p id="log-placeholder" class="placeholder">

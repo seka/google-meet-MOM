@@ -8,6 +8,7 @@ const iconStop = document.getElementById("icon-stop") as HTMLElement;
 const statusBadge = document.getElementById("status-badge") as HTMLSpanElement;
 const statusLabel = document.getElementById("status-label") as HTMLSpanElement;
 const statusSpinner = document.getElementById("status-spinner") as HTMLElement;
+const statusBar = document.getElementById("status-bar") as HTMLDivElement;
 const statusMessage = document.getElementById("status-message") as HTMLParagraphElement;
 const logContent = document.getElementById("log-content") as HTMLDivElement;
 const logPlaceholder = document.getElementById("log-placeholder") as HTMLParagraphElement;
@@ -32,20 +33,16 @@ const STATE_LABELS: Record<RecordingState, string> = {
 
 const SPINNER_STATES = new Set<RecordingState>(["transcribing", "summarizing"]);
 
-const DEFAULT_MESSAGES: Partial<Record<RecordingState, string>> = {
-  recording: "Google Meet の音声を録音しています",
-  transcribing: "音声をテキストに変換しています...",
-  summarizing: "議事録を生成しています...",
-  done: "処理が完了しました",
-};
-
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
 
   statusBadge.className = `badge badge-${state}`;
   statusLabel.textContent = STATE_LABELS[state];
   statusSpinner.classList.toggle("hidden", !SPINNER_STATES.has(state));
-  statusMessage.textContent = message || DEFAULT_MESSAGES[state] || "";
+
+  const isError = state === "error" && message !== "";
+  statusBar.classList.toggle("hidden", !isError);
+  statusMessage.textContent = isError ? message : "";
 
   if (state === "idle" || state === "done" || state === "error") {
     iconMic.classList.remove("hidden");
