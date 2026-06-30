@@ -1,6 +1,6 @@
 import type { SpeakerEvent } from "../types";
 
-function getMeetingTitle(): string {
+export function getMeetingTitle(): string {
   const selectors = ["[data-meeting-title]", 'c-wiz [jsname="r4nke"]', '[jsname="ZaFQO"]'];
 
   for (const sel of selectors) {
@@ -13,7 +13,7 @@ function getMeetingTitle(): string {
 
 // Google Meet のアクティブスピーカー名を取得する。
 // Meet の DOM は変更されることがあるため複数のセレクタを試し、どれも一致しなければ null を返す。
-function getActiveSpeaker(): string | null {
+export function getActiveSpeaker(): string | null {
   const candidates = [
     // ピン留めされていないアクティブスピーカータイル内の名前
     '[data-participant-id][data-is-speaking="true"] [data-self-name]',
