@@ -35,6 +35,29 @@ async function closeOffscreenDocument(): Promise<void> {
   await chrome.offscreen.closeDocument();
 }
 
+async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknown> {
+  const attempts = 3;
+
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, (result: unknown) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          resolve(result);
+        });
+      });
+    } catch (err) {
+      if (i === attempts - 1) throw err;
+      await new Promise<void>((resolve) => setTimeout(resolve, 200));
+    }
+  }
+
+  throw new Error("Offscreen document did not respond");
+}
+
 function setState(state: RecordingState, extra: Record<string, unknown> = {}): void {
   currentState = state;
   chrome.runtime.sendMessage(
@@ -113,6 +136,17 @@ chrome.runtime.onMessage.addListener(
             recordingStartTime = Date.now();
             meetTabId = message.payload.tabId ?? null;
 
+            // バックグラウンドで streamId を取得（tabCapture パーミッションにより可能）
+            const streamId = await new Promise<string>((resolve, reject) => {
+              chrome.tabCapture.getMediaStreamId({ targetTabId: message.payload.tabId }, (id) => {
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                  resolve(id);
+                }
+              });
+            });
+
             // content script に話者追跡を開始させる
             if (meetTabId) {
               chrome.tabs.sendMessage(
@@ -126,7 +160,7 @@ chrome.runtime.onMessage.addListener(
               {
                 type: "FORWARD_TO_OFFSCREEN",
                 target: "offscreen",
-                payload: { ...message.payload, recordingStartTime },
+                payload: { ...message.payload, streamId, recordingStartTime },
               },
               () => {},
             );
@@ -195,13 +229,18 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ ok: false, error: "録音中はテストできません" });
             break;
           }
-          await ensureOffscreenDocument();
-          chrome.runtime.sendMessage(
-            { type: "WHISPER_TEST", target: "offscreen", payload: message.payload },
-            (result: unknown) => {
-              sendResponse(result);
-            },
-          );
+          try {
+            await ensureOffscreenDocument();
+            const result = await sendMessageToOffscreen({
+              type: "WHISPER_TEST",
+              target: "offscreen",
+              payload: message.payload,
+            });
+            sendResponse(result);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            sendResponse({ ok: false, error: `Offscreen 通信エラー: ${msg}` });
+          }
           break;
         }
       }

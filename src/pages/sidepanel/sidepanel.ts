@@ -108,17 +108,13 @@ recordBtn.addEventListener("click", async () => {
     // content script が応答しない場合はスキップ
   }
 
-  const streamId = await new Promise<string>((resolve) => {
-    chrome.tabCapture.getMediaStreamId({ targetTabId: meetTab.id }, resolve);
-  });
-
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
   chrome.runtime.sendMessage(
     {
       type: "START_RECORDING",
       target: "background",
-      payload: { streamId, meetingTitle, settings, tabId: meetTab.id },
+      payload: { meetingTitle, settings, tabId: meetTab.id },
     },
     () => {},
   );

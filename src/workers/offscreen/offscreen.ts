@@ -7,7 +7,10 @@ import { buildSpeakerTranscript, type WordChunk } from "./transcript";
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 if (env.backends.onnx.wasm) {
   env.backends.onnx.wasm.numThreads = 1;
+  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL("vendor/transformers/");
 }
+env.allowLocalModels = true;
+env.localModelPath = chrome.runtime.getURL("models/");
 
 type ASRResult = { text: string; chunks?: WordChunk[] };
 type ASRPipeline = (
@@ -18,6 +21,7 @@ type ASRPipeline = (
 let mediaRecorder: MediaRecorder | null = null;
 let audioChunks: Blob[] = [];
 let whisperPipeline: ASRPipeline | null = null;
+let whisperPipelineModel: string | null = null;
 let currentMeetingTitle = "Google Meet";
 
 // チャンク処理の状態
@@ -27,7 +31,7 @@ let chunkIntervalId: ReturnType<typeof setInterval> | null = null;
 let pendingSettings: ExtensionSettings | null = null;
 
 async function loadWhisper(model: string): Promise<ASRPipeline> {
-  if (!whisperPipeline) {
+  if (!whisperPipeline || whisperPipelineModel !== model) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     whisperPipeline = (await (pipeline as any)("automatic-speech-recognition", model, {
       progress_callback: (info: Record<string, unknown>) => {
@@ -42,6 +46,7 @@ async function loadWhisper(model: string): Promise<ASRPipeline> {
         }
       },
     })) as ASRPipeline;
+    whisperPipelineModel = model;
   }
   return whisperPipeline;
 }
