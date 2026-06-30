@@ -1,0 +1,290 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.github
+.github/ISSUE_TEMPLATE
+.github/ISSUE_TEMPLATE/bug_report.md
+.github/ISSUE_TEMPLATE/feature_request.md
+.github/copilot-instructions.md
+.github/pull_request_template.md
+.gitignore
+.vite-hooks
+.vite-hooks/_
+.vite-hooks/_/.gitignore
+.vite-hooks/_/applypatch-msg
+.vite-hooks/_/commit-msg
+.vite-hooks/_/h
+.vite-hooks/_/post-applypatch
+.vite-hooks/_/post-checkout
+.vite-hooks/_/post-commit
+.vite-hooks/_/post-merge
+.vite-hooks/_/post-rewrite
+.vite-hooks/_/pre-applypatch
+.vite-hooks/_/pre-auto-gc
+.vite-hooks/_/pre-commit
+.vite-hooks/_/pre-merge-commit
+.vite-hooks/_/pre-push
+.vite-hooks/_/pre-rebase
+.vite-hooks/_/prepare-commit-msg
+.vite-hooks/pre-commit
+AGENTS.md
+CLAUDE.md
+README.md
+docs
+docs/CONSTRAINTS.md
+docs/codebase
+docs/codebase/.codebase-scan.txt
+lsp.json
+package-lock.json
+package.json
+plan.md
+public
+public/.DS_Store
+public/icons
+public/icons/icon128.png
+public/icons/icon16.png
+public/icons/icon32.png
+public/icons/icon48.png
+public/manifest.json
+scripts
+scripts/gen-icons.mjs
+src
+src/core
+src/core/components
+src/core/components/atoms
+src/core/components/organisms
+src/core/tokens.css
+src/db.ts
+src/features
+src/features/recording
+src/features/recording/components
+src/messages.ts
+src/pages
+src/pages/options
+src/pages/options/options.css
+src/pages/options/options.html
+src/pages/options/options.ts
+src/pages/sidepanel
+src/pages/sidepanel/sidepanel.css
+src/pages/sidepanel/sidepanel.html
+src/pages/sidepanel/sidepanel.ts
+src/test-setup.ts
+src/types.ts
+src/workers
+src/workers/background.test.ts
+src/workers/background.ts
+src/workers/content.test.ts
+src/workers/content.ts
+src/workers/offscreen
+src/workers/offscreen/offscreen.html
+src/workers/offscreen/offscreen.ts
+src/workers/offscreen/transcript.test.ts
+src/workers/offscreen/transcript.ts
+tsconfig.json
+vite.config.ts
+
+=== STACK DETECTION (manifest files) ===
+
+--- package-lock.json ---
+{
+  "name": "google-meet-mom",
+  "version": "0.1.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "google-meet-mom",
+      "version": "0.1.0",
+      "dependencies": {
+        "@huggingface/transformers": "^3.0.0"
+      },
+      "devDependencies": {
+        "@types/chrome": "^0.0.268",
+        "happy-dom": "^20.10.6",
+        "typescript": "^5.5.0",
+        "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+        "vite-plus": "latest"
+      }
+    },
+    "node_modules/@babel/code-frame": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz",
+      "integrity": "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/helper-validator-identifier": "^7.29.7",
+        "js-tokens": "^4.0.0",
+        "picocolors": "^1.1.1"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-validator-identifier": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz",
+      "integrity": "sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/runtime": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.7.tgz",
+      "integrity": "sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@blazediff/core": {
+      "version": "1.9.1",
+      "resolved": "https://registry.npmjs.org/@blazediff/core/-/core-1.9.1.tgz",
+      "integrity": "sha512-ehg3jIkYKulZh+8om/O25vkvSsXXwC+skXmyA87FFx6A/45eqOkZsBltMw/TVteb0mloiGT8oGRTcjRAz66zaA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@emnapi/core": {
+      "version": "1.11.1",
+      "resolved": "https://registry.npmjs.org/@emnapi/core/-/core-1.11.1.tgz",
+      "integrity": "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==",
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "@emnapi/wasi-threads": "1.2.2",
+        "tslib": "^2.4.0"
+      }
+    },
+    "node_modules/@emnapi/runtime": {
+      "version": "1.11.1",
+      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.11.1.tgz",
+      "integrity": "sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==",
+      "license": "MIT",
+      "optional": true,
+
+[TRUNCATED] Showing first 80 of 4067 lines.
+--- package.json ---
+{
+  "name": "google-meet-mom",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vp build --watch",
+    "build": "vp build",
+    "test": "node node_modules/vitest/dist/cli.js run",
+    "prepare": "vp config"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "happy-dom": "^20.10.6",
+    "typescript": "^5.5.0",
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vite-plus": "latest"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+  },
+  "packageManager": "npm@11.17.0"
+}
+
+
+=== ENTRY POINTS ===
+No common entry points found. Check 'main' or 'scripts.start' in manifest files above.
+
+=== LINTING AND FORMATTING CONFIG ===
+Found: tsconfig.json
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+No .env.example or .env.template found. Identify required environment variables by searching the code and config for environment variable reads.
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+None found.
+
+=== GIT RECENT COMMITS (last 20) ===
+d46ac7e fix(whisper-test): decode audio in options page to avoid offscreen AudioContext failure
+39358fe feat(options): add Whisper test UI
+32cfc23 test: add unit tests for components and workers
+11d977a refactor(offscreen): extract buildSpeakerTranscript to transcript.ts
+3783976 chore(test): set up vitest with happy-dom environment
+a0ef290 feat(manifest): register extension icons
+42978ff feat(icons): add icon generation script and PNG assets
+d62cc66 fix(log-section): add vertical padding to log section
+bda3112 fix(log-section): use neutral colors for log area
+29652fd fix(sidepanel): show error message inline below log section header
+6043752 feat(sidepanel): redesign UI with FABs and consolidated status badge
+77fbb6d fix(core): update design tokens and atom component styles
+5cb37e3 feat: SVG アイコン追加と UI リデザイン（sidepanel / options）
+4e925b7 feat: CSS デザインシステムを core / features に構築
+9816215 refactor: ディレクトリ構造を pages / workers / core / features に再編
+166a886 feat: add chunked live transcription during recording
+d766164 feat: add configurable chunk interval setting
+bd244ec feat: replace popup with side panel
+f69cfd2 chore: initial project setup
+9fd8ecd feat: DOM + Whisper タイムスタンプによる話者分離を実装
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+   5 src/messages.ts
+   5 vite.config.ts
+   5 public/manifest.json
+   4 src/pages/sidepanel/sidepanel.html
+   4 src/pages/sidepanel/sidepanel.ts
+   4 src/options.html
+   4 src/popup.ts
+   4 src/background.ts
+   4 src/offscreen.ts
+   4 src/types.ts
+   3 package.json
+   3 src/core/components/organisms/log-section.css
+   3 src/core/tokens.css
+   3 src/pages/sidepanel/sidepanel.css
+   3 src/popup.css
+   3 src/popup.html
+   3 tsconfig.json
+   3 src/options.ts
+   3 src/content.ts
+   2 src/pages/options/options.ts
+
+=== MONOREPO SIGNALS ===
+No monorepo signals detected.
+
+=== CODE METRICS ===
+Total files scanned: 53
+Total lines of code: 6007
+
+Files by language:
+  Other: 33
+  TypeScript: 20
+
+Top 10 largest files:
+package-lock.json: 131.7KB
+src/workers/offscreen/offscreen.ts: 9.5KB
+plan.md: 7.5KB
+src/workers/background.ts: 7.2KB
+src/workers/background.test.ts: 7.0KB
+src/pages/sidepanel/sidepanel.ts: 6.3KB
+src/pages/sidepanel/sidepanel.html: 5.1KB
+src/pages/options/options.ts: 4.9KB
+docs/CONSTRAINTS.md: 3.6KB
+public/icons/icon128.png: 3.4KB
+
+=== CI/CD PIPELINES ===
+No CI/CD pipelines detected.
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===
