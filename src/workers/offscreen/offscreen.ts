@@ -2,13 +2,13 @@ import { env, pipeline } from "@huggingface/transformers";
 import { saveRecording, updateRecording } from "../../db";
 import type { ExtensionMessage } from "../../messages";
 import type { ExtensionSettings, SpeakerEvent } from "../../types";
+import { buildSpeakerTranscript, type WordChunk } from "./transcript";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 if (env.backends.onnx.wasm) {
   env.backends.onnx.wasm.numThreads = 1;
 }
 
-type WordChunk = { text: string; timestamp: [number, number] | [null, null] };
 type ASRResult = { text: string; chunks?: WordChunk[] };
 type ASRPipeline = (
   audio: Float32Array,
@@ -152,49 +152,6 @@ async function startRecording(
   }, settings.chunkIntervalSec * 1000);
 }
 
-// 話者イベントと Whisper のワードタイムスタンプを突き合わせてセグメント化したトランスクリプトを生成する
-function buildSpeakerTranscript(
-  chunks: WordChunk[],
-  speakerEvents: SpeakerEvent[],
-  recordingStartTime: number,
-): string {
-  if (speakerEvents.length === 0) {
-    return chunks.map((c) => c.text).join("");
-  }
-
-  // 話者イベントを録音開始からの相対秒に変換
-  const relativeEvents = speakerEvents.map((e) => ({
-    name: e.name,
-    startSec: (e.absoluteTime - recordingStartTime) / 1000,
-  }));
-
-  // ワードごとに話者を割り当て
-  const segments: Array<{ speaker: string; text: string }> = [];
-  let currentSpeaker = relativeEvents[0]?.name ?? "不明";
-  let currentText = "";
-
-  for (const chunk of chunks) {
-    const [start] = chunk.timestamp;
-    // タイムスタンプが null の場合は直前の話者を引き継ぐ
-    if (start !== null) {
-      const speaker =
-        [...relativeEvents].reverse().find((e) => e.startSec <= start)?.name ?? currentSpeaker;
-      if (speaker !== currentSpeaker && currentText.trim()) {
-        segments.push({ speaker: currentSpeaker, text: currentText.trim() });
-        currentText = "";
-      }
-      currentSpeaker = speaker;
-    }
-    currentText += chunk.text;
-  }
-
-  if (currentText.trim()) {
-    segments.push({ speaker: currentSpeaker, text: currentText.trim() });
-  }
-
-  return segments.map((s) => `[${s.speaker}] ${s.text}`).join("\n");
-}
-
 async function stopAndTranscribe(
   settings: ExtensionSettings,
   speakerEvents: SpeakerEvent[],
@@ -321,6 +278,28 @@ chrome.runtime.onMessage.addListener(
           });
           await stopAndTranscribe(stored as ExtensionSettings, speakerEvents, recordingStartTime);
           sendResponse({ ok: true });
+          break;
+        }
+
+        case "WHISPER_TEST": {
+          const { audioSamples, model, language } = message.payload as {
+            audioSamples: number[];
+            model: string;
+            language: string;
+          };
+          try {
+            const audioData = new Float32Array(audioSamples);
+            const asr = await loadWhisper(model);
+            const result = await asr(audioData, {
+              language: language === "ja" ? "japanese" : "english",
+              task: "transcribe",
+            });
+            const single = Array.isArray(result) ? result[0] : result;
+            sendResponse({ ok: true, transcript: single?.text ?? "" });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            sendResponse({ ok: false, error: msg });
+          }
           break;
         }
       }
