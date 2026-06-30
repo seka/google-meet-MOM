@@ -189,6 +189,21 @@ chrome.runtime.onMessage.addListener(
           await closeOffscreenDocument();
           break;
         }
+
+        case "WHISPER_TEST": {
+          if (currentState !== "idle" && currentState !== "done" && currentState !== "error") {
+            sendResponse({ ok: false, error: "録音中はテストできません" });
+            break;
+          }
+          await ensureOffscreenDocument();
+          chrome.runtime.sendMessage(
+            { type: "WHISPER_TEST", target: "offscreen", payload: message.payload },
+            (result: unknown) => {
+              sendResponse(result);
+            },
+          );
+          break;
+        }
       }
     })();
 

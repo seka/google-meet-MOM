@@ -87,6 +87,12 @@ export interface TranscriptChunkMsg extends BaseMessage {
   payload: { text: string; chunkIndex: number };
 }
 
+export interface WhisperTestMsg extends BaseMessage {
+  type: "WHISPER_TEST";
+  target: "background" | "offscreen";
+  payload: { audioSamples: number[]; model: string; language: string };
+}
+
 export type ExtensionMessage =
   | StartRecordingMsg
   | StopRecordingMsg
@@ -101,4 +107,5 @@ export type ExtensionMessage =
   | StartSpeakerTrackingMsg
   | GetSpeakerEventsMsg
   | SpeakerEventsMsg
-  | TranscriptChunkMsg;
+  | TranscriptChunkMsg
+  | WhisperTestMsg;
