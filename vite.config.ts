@@ -42,4 +42,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["@huggingface/transformers"],
   },
+  test: {
+    environment: "happy-dom",
+    include: ["**/*.test.ts"],
+    setupFiles: ["./test-setup.ts"],
+  },
 });

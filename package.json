@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vp build --watch",
     "build": "vp build",
+    "test": "node node_modules/vitest/dist/cli.js run",
     "prepare": "vp config"
   },
   "dependencies": {
@@ -12,6 +13,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
+    "happy-dom": "^20.10.6",
     "typescript": "^5.5.0",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plus": "latest"
