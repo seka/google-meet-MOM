@@ -41,6 +41,17 @@
           <option value="en">英語</option>
         </select>
       </div>
+      <div class="field">
+        <label>動作確認</label>
+        <div class="test-row">
+          <button id="whisper-test-btn" class="btn btn-secondary">マイクで 3 秒テスト</button>
+          <span id="whisper-test-status" class="hint"></span>
+        </div>
+        <div id="whisper-test-result" hidden>
+          <p class="test-label">認識結果</p>
+          <div id="whisper-test-output" class="test-output"></div>
+        </div>
+      </div>
     </div>
 
     <div class="card">
