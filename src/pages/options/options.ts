@@ -12,6 +12,18 @@ const whisperTestStatus = document.getElementById("whisper-test-status") as HTML
 const whisperTestResult = document.getElementById("whisper-test-result") as HTMLDivElement;
 const whisperTestOutput = document.getElementById("whisper-test-output") as HTMLDivElement;
 
+interface RecordingSession {
+  audioCtx: AudioContext;
+  source: MediaStreamAudioSourceNode;
+  processor: ScriptProcessorNode;
+  stream: MediaStream;
+  chunks: Float32Array[];
+  startedAt: number;
+}
+
+let recordingSession: RecordingSession | null = null;
+let recordingTimer: ReturnType<typeof setInterval> | null = null;
+
 async function load(): Promise<void> {
   const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   ollamaUrl.value = s["ollamaUrl"] as string;
@@ -36,62 +48,102 @@ saveBtn.addEventListener("click", async () => {
   }, 2000);
 });
 
-async function recordAudio(durationMs: number): Promise<Float32Array> {
+function updateRecordingStatus(startedAt: number): void {
+  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  whisperTestStatus.textContent = `録音中... ${elapsed} 秒`;
+}
+
+async function startRecordingTest(): Promise<void> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
-  const chunks: Blob[] = [];
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-    recorder.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop());
-      resolve(new Blob(chunks, { type: "audio/webm;codecs=opus" }));
-    };
-    recorder.onerror = () => reject(new Error("録音に失敗しました"));
-    recorder.start();
-    setTimeout(() => recorder.stop(), durationMs);
-  });
-
-  const arrayBuffer = await blob.arrayBuffer();
   const audioCtx = new AudioContext();
-  const decoded = await audioCtx.decodeAudioData(arrayBuffer);
-  await audioCtx.close();
+  const source = audioCtx.createMediaStreamSource(stream);
+  const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+  const chunks: Float32Array[] = [];
+
+  processor.onaudioprocess = (event) => {
+    chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+  };
+
+  source.connect(processor);
+  processor.connect(audioCtx.destination);
+
+  recordingSession = { audioCtx, source, processor, stream, chunks, startedAt: Date.now() };
+  updateRecordingStatus(recordingSession.startedAt);
+  recordingTimer = setInterval(() => {
+    if (recordingSession) updateRecordingStatus(recordingSession.startedAt);
+  }, 1000);
+}
+
+async function stopRecordingTest(): Promise<Float32Array> {
+  if (!recordingSession) return new Float32Array();
+
+  const { audioCtx, source, processor, stream, chunks } = recordingSession;
+  recordingSession = null;
+
+  if (recordingTimer) {
+    clearInterval(recordingTimer);
+    recordingTimer = null;
+  }
+
+  processor.disconnect();
+  source.disconnect();
+  stream.getTracks().forEach((t) => t.stop());
+
+  const inputLength = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  if (inputLength === 0) {
+    await audioCtx.close();
+    throw new Error("音声を取得できませんでした");
+  }
+
+  const input = new Float32Array(inputLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    input.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const buffer = audioCtx.createBuffer(1, input.length, audioCtx.sampleRate);
+  buffer.copyToChannel(input, 0);
 
   const targetSampleRate = 16000;
   const offlineCtx = new OfflineAudioContext(
     1,
-    Math.ceil(decoded.duration * targetSampleRate),
+    Math.ceil(buffer.duration * targetSampleRate),
     targetSampleRate,
   );
-  const source = offlineCtx.createBufferSource();
-  source.buffer = decoded;
-  source.connect(offlineCtx.destination);
-  source.start();
+  const resampleSource = offlineCtx.createBufferSource();
+  resampleSource.buffer = buffer;
+  resampleSource.connect(offlineCtx.destination);
+  resampleSource.start();
   const resampled = await offlineCtx.startRendering();
+  await audioCtx.close();
   return resampled.getChannelData(0);
 }
 
 whisperTestBtn.addEventListener("click", async () => {
-  whisperTestBtn.disabled = true;
-  whisperTestResult.hidden = true;
-  whisperTestOutput.textContent = "";
+  if (!recordingSession) {
+    whisperTestBtn.disabled = true;
+    whisperTestResult.hidden = true;
+    whisperTestOutput.textContent = "";
 
-  let countdown = 3;
-  whisperTestStatus.textContent = `録音中... あと ${countdown} 秒`;
-  const timer = setInterval(() => {
-    countdown--;
-    if (countdown > 0) {
-      whisperTestStatus.textContent = `録音中... あと ${countdown} 秒`;
+    try {
+      await startRecordingTest();
+      whisperTestBtn.textContent = "録音停止";
+      whisperTestBtn.disabled = false;
+    } catch (err) {
+      whisperTestStatus.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
+      whisperTestBtn.textContent = "録音開始";
+      whisperTestBtn.disabled = false;
     }
-  }, 1000);
+    return;
+  }
+
+  whisperTestBtn.disabled = true;
+  whisperTestStatus.textContent = "文字起こし中...";
 
   try {
-    const audioSamples = await recordAudio(3000);
-    clearInterval(timer);
+    const audioSamples = await stopRecordingTest();
 
-    whisperTestStatus.textContent = "文字起こし中...";
     const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
     chrome.runtime.sendMessage(
@@ -113,12 +165,13 @@ whisperTestBtn.addEventListener("click", async () => {
         } else {
           whisperTestStatus.textContent = `エラー: ${result?.error ?? "不明なエラー"}`;
         }
+        whisperTestBtn.textContent = "録音開始";
         whisperTestBtn.disabled = false;
       },
     );
   } catch (err) {
-    clearInterval(timer);
     whisperTestStatus.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
+    whisperTestBtn.textContent = "録音開始";
     whisperTestBtn.disabled = false;
   }
 });

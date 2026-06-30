@@ -36,7 +36,7 @@ describe("buildSpeakerTranscript", () => {
         { text: "Bの発言", timestamp: [5, 7] },
       ];
       const events: SpeakerEvent[] = [
-        { name: "田中", absoluteTime: t0 + 0 * 1000 }, // 0秒
+        { name: "田中", absoluteTime: t0 }, // 0秒
         { name: "佐藤", absoluteTime: t0 + 3 * 1000 }, // 3秒
       ];
 
@@ -76,7 +76,7 @@ describe("buildSpeakerTranscript", () => {
         { text: "C", timestamp: [20, 21] },
       ];
       const events: SpeakerEvent[] = [
-        { name: "田中", absoluteTime: t0 + 0 * 1000 },
+        { name: "田中", absoluteTime: t0 },
         { name: "佐藤", absoluteTime: t0 + 5 * 1000 },
         { name: "鈴木", absoluteTime: t0 + 15 * 1000 },
       ];
