@@ -14,6 +14,9 @@ export interface ExtensionSettings {
   whisperModel: string;
   language: string;
   chunkIntervalSec: number;
+  minutesOutputDestination: string;
+  recordingOutputDestination: string;
+  appearance: string;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -22,6 +25,9 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   whisperModel: "onnx-community/whisper-tiny",
   language: "ja",
   chunkIntervalSec: 15,
+  minutesOutputDestination: "local",
+  recordingOutputDestination: "local",
+  appearance: "system",
 };
 
 export type RecordingState =
