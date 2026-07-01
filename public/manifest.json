@@ -3,7 +3,15 @@
   "name": "Google Meet MOM",
   "version": "0.1.0",
   "description": "Google Meet の音声を録音し、議事録を自動作成します",
-  "permissions": ["tabCapture", "offscreen", "storage", "activeTab", "alarms", "sidePanel"],
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "storage",
+    "activeTab",
+    "alarms",
+    "sidePanel",
+    "downloads"
+  ],
   "host_permissions": [
     "https://meet.google.com/*",
     "https://huggingface.co/*",

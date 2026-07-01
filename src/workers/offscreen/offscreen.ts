@@ -1,6 +1,6 @@
 import { saveRecording, updateRecording } from "../../db";
 import type { ExtensionMessage } from "../../messages";
-import type { ExtensionSettings, SpeakerEvent } from "../../types";
+import { DEFAULT_SETTINGS, type ExtensionSettings, type SpeakerEvent } from "../../types";
 import {
   configureAsrRuntime,
   transcribe,
@@ -8,6 +8,7 @@ import {
   transcribeSamples,
 } from "../../data/api/asr";
 import { buildSpeakerTranscript } from "./transcript";
+import { buildOutputFilename } from "@core/download";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 configureAsrRuntime({
@@ -33,6 +34,37 @@ function sendWhisperProgress(progress: number): void {
     },
     () => {},
   );
+}
+
+function downloadRecordingBlob(blob: Blob, filename: string): Promise<void> {
+  const url = URL.createObjectURL(blob);
+
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      {
+        type: "DOWNLOAD_URL",
+        target: "background",
+        payload: { url, filename },
+      },
+      (result: { ok: boolean; error?: string } | null) => {
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 60_000);
+
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+
+        if (!result?.ok) {
+          reject(new Error(result?.error ?? "録音ファイルを保存できませんでした"));
+          return;
+        }
+
+        resolve();
+      },
+    );
+  });
 }
 
 // 設定間隔ごとに蓄積チャンクを処理してサイドパネルへ送信
@@ -133,16 +165,32 @@ async function stopAndTranscribe(
   return new Promise((resolve) => {
     mediaRecorder!.onstop = async () => {
       const duration = (Date.now() - recordingActualStart) / 1000;
+      const savedAt = new Date().toISOString();
       const audioBlob = new Blob(audioChunks, { type: "audio/webm;codecs=opus" });
 
       const recordingId = await saveRecording({
-        date: new Date().toISOString(),
+        date: savedAt,
         meetingTitle: currentMeetingTitle,
         duration,
         audioBlob,
         transcript: "",
         minutes: "",
       });
+
+      if (settings.recordingOutputDestination === "download") {
+        const filename = buildOutputFilename({
+          meetingTitle: currentMeetingTitle,
+          date: savedAt,
+          kind: "recording",
+          extension: "webm",
+        });
+
+        try {
+          await downloadRecordingBlob(audioBlob, filename);
+        } catch {
+          // ファイル保存が失敗しても、ブラウザ内保存と文字起こしは継続する。
+        }
+      }
 
       chrome.runtime.sendMessage(
         {
@@ -228,12 +276,7 @@ chrome.runtime.onMessage.addListener(
 
         case "OFFSCREEN_STOP": {
           const { speakerEvents, recordingStartTime } = message.payload;
-          const stored = await chrome.storage.sync.get({
-            ollamaUrl: "http://localhost:11434",
-            ollamaModel: "llama3.2",
-            whisperModel: "onnx-community/whisper-tiny",
-            language: "ja",
-          });
+          const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
           await stopAndTranscribe(stored as ExtensionSettings, speakerEvents, recordingStartTime);
           sendResponse({ ok: true });
           break;
