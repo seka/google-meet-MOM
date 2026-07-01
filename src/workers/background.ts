@@ -6,10 +6,16 @@ import {
   generateMinutes,
   toMinutesErrorMessage,
 } from "../data/api/minutes";
-import { downloadUrlFile } from "@core/io/file_writer";
+import {
+  buildMinutesMarkdown,
+  buildOutputFilename,
+  downloadTextFile,
+  downloadUrlFile,
+} from "@core/io/file_writer";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;
+let currentMeetingTitle = "Google Meet";
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
 
@@ -99,6 +105,7 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   setState("summarizing", { recordingId });
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+  const generatedAt = new Date().toISOString();
 
   try {
     const minutes = await generateMinutes({
@@ -108,6 +115,31 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
     });
 
     await updateRecording(recordingId, { minutes });
+
+    if (settings["minutesOutputDestination"] === "download") {
+      const filename = buildOutputFilename({
+        meetingTitle: currentMeetingTitle,
+        date: generatedAt,
+        kind: "minutes",
+        extension: "md",
+      });
+      const markdown = buildMinutesMarkdown({
+        meetingTitle: currentMeetingTitle,
+        generatedAt,
+        minutes,
+      });
+
+      try {
+        await downloadTextFile({
+          text: markdown,
+          filename,
+          mimeType: "text/markdown",
+        });
+      } catch {
+        // ファイル保存が失敗しても、生成済みの議事録とブラウザ内保存は維持する。
+      }
+    }
+
     setState("done", { recordingId, minutes });
   } catch (err) {
     setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
@@ -130,6 +162,7 @@ chrome.runtime.onMessage.addListener(
 
             recordingStartTime = Date.now();
             meetTabId = message.payload.tabId ?? null;
+            currentMeetingTitle = message.payload.meetingTitle;
 
             // バックグラウンドで streamId を取得（tabCapture パーミッションにより可能）
             const streamId = await new Promise<string>((resolve, reject) => {

@@ -64,3 +64,22 @@ export function downloadUrlFile(url: string, filename: string): Promise<number> 
     });
   });
 }
+
+export function buildMinutesMarkdown(input: {
+  meetingTitle: string;
+  generatedAt: string;
+  minutes: string;
+}): string {
+  return [`# ${input.meetingTitle}`, "", `生成日時: ${input.generatedAt}`, "", input.minutes].join(
+    "\n",
+  );
+}
+
+export async function downloadTextFile(input: {
+  text: string;
+  filename: string;
+  mimeType: string;
+}): Promise<number> {
+  const url = `data:${input.mimeType};charset=utf-8,${encodeURIComponent(input.text)}`;
+  return downloadUrlFile(url, input.filename);
+}
