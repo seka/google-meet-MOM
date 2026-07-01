@@ -36,6 +36,7 @@ beforeEach(() => {
       cb?.(undefined);
     },
   );
+  vi.stubGlobal("fetch", vi.fn());
 });
 
 const BASE_PAYLOAD = {
@@ -206,6 +207,90 @@ describe("GET_STATE", () => {
     );
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({ state: expect.any(String) }),
+    );
+  });
+});
+
+describe("OLLAMA_TEST", () => {
+  it("Ollama のモデル一覧 API に接続して ok:true を返す", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      text: vi.fn().mockResolvedValue(JSON.stringify({ models: [{ name: "llama3.2:latest" }] })),
+    });
+
+    const sendResponse = vi.fn();
+    bgHandler(
+      {
+        type: "OLLAMA_TEST",
+        target: "background",
+        payload: { ollamaUrl: "http://localhost:11434", ollamaModel: "llama3.2" },
+      },
+      {} as chrome.runtime.MessageSender,
+      sendResponse,
+    );
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ ok: true }));
+    expect(fetch).toHaveBeenCalledWith(
+      "http://localhost:11434/api/tags",
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("Ollama がエラーを返したとき ok:false を返す", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      text: vi.fn().mockResolvedValue(""),
+    });
+
+    const sendResponse = vi.fn();
+    bgHandler(
+      {
+        type: "OLLAMA_TEST",
+        target: "background",
+        payload: { ollamaUrl: "http://localhost:11434", ollamaModel: "missing-model" },
+      },
+      {} as chrome.runtime.MessageSender,
+      sendResponse,
+    );
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith({
+        ok: false,
+        error: "Ollama API: 404 Not Found",
+      }),
+    );
+  });
+
+  it("接続できてもモデルがないとき ok:false を返す", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      text: vi.fn().mockResolvedValue(JSON.stringify({ models: [{ name: "llama3.2:latest" }] })),
+    });
+
+    const sendResponse = vi.fn();
+    bgHandler(
+      {
+        type: "OLLAMA_TEST",
+        target: "background",
+        payload: { ollamaUrl: "http://localhost:11434", ollamaModel: "missing-model" },
+      },
+      {} as chrome.runtime.MessageSender,
+      sendResponse,
+    );
+
+    await vi.waitFor(() =>
+      expect(sendResponse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          error: expect.stringContaining('モデル "missing-model" が見つかりません'),
+        }),
+      ),
     );
   });
 });

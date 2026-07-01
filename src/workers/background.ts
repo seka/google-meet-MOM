@@ -1,6 +1,11 @@
 import { DEFAULT_SETTINGS, type RecordingState, type SpeakerEvent } from "../types";
 import { updateRecording } from "../db";
 import type { ExtensionMessage } from "../messages";
+import {
+  assertMinutesModelAvailable,
+  generateMinutes,
+  toMinutesErrorMessage,
+} from "../data/api/minutes";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;
@@ -82,39 +87,21 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
   });
 }
 
-async function generateMinutes(transcript: string, recordingId: string): Promise<void> {
+async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   setState("summarizing", { recordingId });
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
   try {
-    const res = await fetch(`${settings["ollamaUrl"]}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: settings["ollamaModel"],
-        stream: false,
-        messages: [
-          {
-            role: "user",
-            content:
-              "以下はミーティングの文字起こしです。\n" +
-              "日時・参加者・決定事項・アクションアイテムを含む議事録を日本語で Markdown 形式で作成してください。\n\n" +
-              "---\n" +
-              transcript,
-          },
-        ],
-      }),
+    const minutes = await generateMinutes({
+      ollamaUrl: settings["ollamaUrl"] as string,
+      ollamaModel: settings["ollamaModel"] as string,
+      transcript,
     });
-
-    if (!res.ok) throw new Error(`Ollama API: ${res.status} ${res.statusText}`);
-
-    const data = (await res.json()) as { message?: { content: string } };
-    const minutes = data.message?.content ?? "";
 
     await updateRecording(recordingId, { minutes });
     setState("done", { recordingId, minutes });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = toMinutesErrorMessage(err);
     setState("error", { message: `議事録生成エラー: ${msg}` });
   }
 }
@@ -204,7 +191,7 @@ chrome.runtime.onMessage.addListener(
         case "TRANSCRIPTION_DONE": {
           const { transcript, recordingId } = message.payload;
           currentRecordingId = recordingId;
-          await generateMinutes(transcript, recordingId);
+          await generateAndSaveMinutes(transcript, recordingId);
           await closeOffscreenDocument();
           break;
         }
@@ -240,6 +227,20 @@ chrome.runtime.onMessage.addListener(
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             sendResponse({ ok: false, error: `Offscreen 通信エラー: ${msg}` });
+          }
+          break;
+        }
+
+        case "OLLAMA_TEST": {
+          try {
+            await assertMinutesModelAvailable(
+              message.payload.ollamaUrl,
+              message.payload.ollamaModel,
+            );
+            sendResponse({ ok: true });
+          } catch (err) {
+            const msg = toMinutesErrorMessage(err);
+            sendResponse({ ok: false, error: msg });
           }
           break;
         }
