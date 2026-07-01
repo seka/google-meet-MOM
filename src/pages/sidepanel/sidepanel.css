@@ -40,6 +40,38 @@ body {
   color: var(--text);
 }
 
+html[data-theme="light"] body {
+  --primary: #2f7d32;
+  --primary-hover: #256a28;
+  --danger: #d14343;
+  --danger-hover: #b73535;
+  --surface: #ffffff;
+  --bg: #f6f8fb;
+  --border: #d6dee8;
+  --text: #172033;
+  --text-muted: #566273;
+  --surface-neutral: #ffffff;
+  --border-neutral: #d6dee8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme="dark"] body {
+  --primary: #8bcf8e;
+  --primary-hover: #a4dca6;
+  --danger: #ef6b6b;
+  --danger-hover: #f08282;
+  --surface: #1b2229;
+  --bg: #101418;
+  --border: #34404c;
+  --text: #edf2f7;
+  --text-muted: #a8b3c1;
+  --surface-neutral: #1b2229;
+  --border-neutral: #34404c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.26);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+
 #app {
   flex: 1;
   display: flex;
@@ -184,8 +216,32 @@ body {
   background: #256a28;
 }
 
+html[data-theme="dark"] #status-message {
+  background: #341f22;
+  border-color: #7f3c42;
+}
+
+html[data-theme="dark"] .fab-sm:hover,
+html[data-theme="dark"] .log-chunk,
+html[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background: #242d36;
+}
+
+html[data-theme="dark"] .badge-idle,
+html[data-theme="dark"] .badge-done {
+  background: #2a3440;
+}
+
+html[data-theme="dark"] .btn-primary {
+  background: #2f7d32;
+}
+
+html[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+  background: #3d9442;
+}
+
 @media (prefers-color-scheme: dark) {
-  body {
+  html:not([data-theme]) body {
     --primary: #8bcf8e;
     --primary-hover: #a4dca6;
     --danger: #ef6b6b;
@@ -201,27 +257,27 @@ body {
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
   }
 
-  #status-message {
+  html:not([data-theme]) #status-message {
     background: #341f22;
     border-color: #7f3c42;
   }
 
-  .fab-sm:hover,
-  .log-chunk,
-  .btn-secondary:hover:not(:disabled) {
+  html:not([data-theme]) .fab-sm:hover,
+  html:not([data-theme]) .log-chunk,
+  html:not([data-theme]) .btn-secondary:hover:not(:disabled) {
     background: #242d36;
   }
 
-  .badge-idle,
-  .badge-done {
+  html:not([data-theme]) .badge-idle,
+  html:not([data-theme]) .badge-done {
     background: #2a3440;
   }
 
-  .btn-primary {
+  html:not([data-theme]) .btn-primary {
     background: #2f7d32;
   }
 
-  .btn-primary:hover:not(:disabled) {
+  html:not([data-theme]) .btn-primary:hover:not(:disabled) {
     background: #3d9442;
   }
 }

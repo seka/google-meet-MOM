@@ -1,6 +1,7 @@
 import type { RecordingState } from "../../types";
 import { DEFAULT_SETTINGS } from "../../types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
+import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@core/theme";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
@@ -180,3 +181,6 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
 chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState } | null) => {
   if (res) updateUI(res.state);
 });
+
+subscribeAppearanceChanges();
+void loadAndApplyAppearance();
