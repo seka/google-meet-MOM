@@ -1,27 +1,22 @@
-import { env, pipeline } from "@huggingface/transformers";
 import { saveRecording, updateRecording } from "../../db";
 import type { ExtensionMessage } from "../../messages";
 import type { ExtensionSettings, SpeakerEvent } from "../../types";
-import { buildSpeakerTranscript, type WordChunk } from "./transcript";
+import {
+  configureAsrRuntime,
+  transcribe,
+  transcribeChunk,
+  transcribeSamples,
+} from "../../data/api/asr";
+import { buildSpeakerTranscript } from "./transcript";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
-if (env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.numThreads = 1;
-  env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL("vendor/transformers/");
-}
-env.allowLocalModels = true;
-env.localModelPath = chrome.runtime.getURL("models/");
-
-type ASRResult = { text: string; chunks?: WordChunk[] };
-type ASRPipeline = (
-  audio: Float32Array,
-  options: Record<string, unknown>,
-) => Promise<ASRResult | ASRResult[]>;
+configureAsrRuntime({
+  wasmPaths: chrome.runtime.getURL("vendor/transformers/"),
+  localModelPath: chrome.runtime.getURL("models/"),
+});
 
 let mediaRecorder: MediaRecorder | null = null;
 let audioChunks: Blob[] = [];
-let whisperPipeline: ASRPipeline | null = null;
-let whisperPipelineModel: string | null = null;
 let currentMeetingTitle = "Google Meet";
 
 // チャンク処理の状態
@@ -30,58 +25,14 @@ let isProcessingChunk = false;
 let chunkIntervalId: ReturnType<typeof setInterval> | null = null;
 let pendingSettings: ExtensionSettings | null = null;
 
-async function loadWhisper(model: string): Promise<ASRPipeline> {
-  if (!whisperPipeline || whisperPipelineModel !== model) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    whisperPipeline = (await (pipeline as any)("automatic-speech-recognition", model, {
-      progress_callback: (info: Record<string, unknown>) => {
-        if (info["status"] === "progress") {
-          chrome.runtime.sendMessage(
-            {
-              type: "TRANSCRIPTION_PROGRESS",
-              payload: { progress: (info["progress"] as number) ?? 0 },
-            },
-            () => {},
-          );
-        }
-      },
-    })) as ASRPipeline;
-    whisperPipelineModel = model;
-  }
-  return whisperPipeline;
-}
-
-async function decodeAndResample(blob: Blob): Promise<Float32Array> {
-  const arrayBuffer = await blob.arrayBuffer();
-  const audioCtx = new AudioContext();
-  const decoded = await audioCtx.decodeAudioData(arrayBuffer);
-
-  const targetSampleRate = 16000;
-  const offlineCtx = new OfflineAudioContext(
-    1,
-    Math.ceil(decoded.duration * targetSampleRate),
-    targetSampleRate,
+function sendWhisperProgress(progress: number): void {
+  chrome.runtime.sendMessage(
+    {
+      type: "TRANSCRIPTION_PROGRESS",
+      payload: { progress },
+    },
+    () => {},
   );
-  const source = offlineCtx.createBufferSource();
-  source.buffer = decoded;
-  source.connect(offlineCtx.destination);
-  source.start();
-  const resampled = await offlineCtx.startRendering();
-  return resampled.getChannelData(0);
-}
-
-// 話者ラベルなしの高速転写（録音中のプレビュー用）
-async function transcribeChunk(blob: Blob, settings: ExtensionSettings): Promise<string> {
-  const audioData = await decodeAndResample(blob);
-  const asr = await loadWhisper(settings.whisperModel);
-  const result = await asr(audioData, {
-    language: settings.language === "ja" ? "japanese" : "english",
-    task: "transcribe",
-    chunk_length_s: 30,
-    stride_length_s: 5,
-  });
-  const singleResult = Array.isArray(result) ? result[0] : result;
-  return singleResult?.text ?? "";
 }
 
 // 設定間隔ごとに蓄積チャンクを処理してサイドパネルへ送信
@@ -98,7 +49,11 @@ async function processNextChunk(): Promise<void> {
 
   try {
     const blob = new Blob(window, { type: "audio/webm;codecs=opus" });
-    const text = await transcribeChunk(blob, pendingSettings);
+    const text = await transcribeChunk(blob, {
+      model: pendingSettings.whisperModel,
+      language: pendingSettings.language,
+      onProgress: sendWhisperProgress,
+    });
     chrome.runtime.sendMessage(
       {
         type: "TRANSCRIPT_CHUNK",
@@ -198,7 +153,13 @@ async function stopAndTranscribe(
         () => {},
       );
 
-      await transcribe(audioBlob, recordingId, settings, speakerEvents, recordingActualStart);
+      await transcribeAndSave(
+        audioBlob,
+        recordingId,
+        settings,
+        speakerEvents,
+        recordingActualStart,
+      );
       resolve();
     };
 
@@ -207,7 +168,7 @@ async function stopAndTranscribe(
 }
 
 // 全音声を話者ラベル付きで転写（録音終了後の最終トランスクリプト）
-async function transcribe(
+async function transcribeAndSave(
   audioBlob: Blob,
   recordingId: string,
   settings: ExtensionSettings,
@@ -215,24 +176,16 @@ async function transcribe(
   recordingStartTime: number,
 ): Promise<void> {
   try {
-    const audioData = await decodeAndResample(audioBlob);
-    const asr = await loadWhisper(settings.whisperModel);
-
-    const result = await asr(audioData, {
-      language: settings.language === "ja" ? "japanese" : "english",
-      task: "transcribe",
-      chunk_length_s: 30,
-      stride_length_s: 5,
-      return_timestamps: "word",
+    const result = await transcribe(audioBlob, {
+      model: settings.whisperModel,
+      language: settings.language,
+      onProgress: sendWhisperProgress,
     });
-
-    const singleResult = Array.isArray(result) ? result[0] : result;
-    const chunks = singleResult?.chunks ?? [];
 
     const transcript =
       speakerEvents.length > 0
-        ? buildSpeakerTranscript(chunks, speakerEvents, recordingStartTime)
-        : (singleResult?.text ?? "");
+        ? buildSpeakerTranscript(result.chunks, speakerEvents, recordingStartTime)
+        : result.text;
 
     await updateRecording(recordingId, { transcript });
 
@@ -294,13 +247,12 @@ chrome.runtime.onMessage.addListener(
           };
           try {
             const audioData = new Float32Array(audioSamples);
-            const asr = await loadWhisper(model);
-            const result = await asr(audioData, {
-              language: language === "ja" ? "japanese" : "english",
-              task: "transcribe",
+            const transcript = await transcribeSamples(audioData, {
+              model,
+              language,
+              onProgress: sendWhisperProgress,
             });
-            const single = Array.isArray(result) ? result[0] : result;
-            sendResponse({ ok: true, transcript: single?.text ?? "" });
+            sendResponse({ ok: true, transcript });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             sendResponse({ ok: false, error: msg });
