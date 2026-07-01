@@ -5,6 +5,14 @@ const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;
 const whisperModel = document.getElementById("whisper-model") as HTMLSelectElement;
 const language = document.getElementById("language") as HTMLSelectElement;
 const chunkInterval = document.getElementById("chunk-interval") as HTMLSelectElement;
+const minutesOutputDestination = document.getElementById(
+  "minutes-output-destination",
+) as HTMLSelectElement;
+const recordingOutputDestination = document.getElementById(
+  "recording-output-destination",
+) as HTMLSelectElement;
+const appearance = document.getElementById("appearance") as HTMLSelectElement;
+const saveRow = document.getElementById("save-row") as HTMLElement;
 const saveBtn = document.getElementById("save-btn") as HTMLButtonElement;
 const savedMsg = document.getElementById("saved-msg") as HTMLSpanElement;
 const ollamaTestBtn = document.getElementById("ollama-test-btn") as HTMLButtonElement;
@@ -13,6 +21,9 @@ const whisperTestBtn = document.getElementById("whisper-test-btn") as HTMLButton
 const whisperTestStatus = document.getElementById("whisper-test-status") as HTMLSpanElement;
 const whisperTestResult = document.getElementById("whisper-test-result") as HTMLDivElement;
 const whisperTestOutput = document.getElementById("whisper-test-output") as HTMLDivElement;
+const appVersion = document.getElementById("app-version") as HTMLElement;
+const navItems = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-screen-target]"));
+const screens = Array.from(document.querySelectorAll<HTMLElement>("[data-screen]"));
 
 interface RecordingSession {
   audioCtx: AudioContext;
@@ -33,7 +44,27 @@ async function load(): Promise<void> {
   whisperModel.value = s["whisperModel"] as string;
   language.value = s["language"] as string;
   chunkInterval.value = String(s["chunkIntervalSec"]);
+  minutesOutputDestination.value = s["minutesOutputDestination"] as string;
+  recordingOutputDestination.value = s["recordingOutputDestination"] as string;
+  appearance.value = s["appearance"] as string;
+  appVersion.textContent = chrome.runtime.getManifest().version;
 }
+
+function showScreen(screenName: string): void {
+  navItems.forEach((item) => {
+    item.classList.toggle("active", item.dataset.screenTarget === screenName);
+  });
+  screens.forEach((screen) => {
+    screen.classList.toggle("active", screen.dataset.screen === screenName);
+  });
+  saveRow.hidden = screenName === "about";
+}
+
+navItems.forEach((item) => {
+  item.addEventListener("click", () => {
+    showScreen(item.dataset.screenTarget ?? "general");
+  });
+});
 
 saveBtn.addEventListener("click", async () => {
   await chrome.storage.sync.set({
@@ -42,6 +73,9 @@ saveBtn.addEventListener("click", async () => {
     whisperModel: whisperModel.value,
     language: language.value,
     chunkIntervalSec: Number(chunkInterval.value),
+    minutesOutputDestination: minutesOutputDestination.value,
+    recordingOutputDestination: recordingOutputDestination.value,
+    appearance: appearance.value,
   });
 
   savedMsg.style.display = "inline";
