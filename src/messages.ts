@@ -93,6 +93,12 @@ export interface WhisperTestMsg extends BaseMessage {
   payload: { audioSamples: number[]; model: string; language: string };
 }
 
+export interface OllamaTestMsg extends BaseMessage {
+  type: "OLLAMA_TEST";
+  target: "background";
+  payload: { ollamaUrl: string; ollamaModel: string };
+}
+
 export type ExtensionMessage =
   | StartRecordingMsg
   | StopRecordingMsg
@@ -108,4 +114,5 @@ export type ExtensionMessage =
   | GetSpeakerEventsMsg
   | SpeakerEventsMsg
   | TranscriptChunkMsg
-  | WhisperTestMsg;
+  | WhisperTestMsg
+  | OllamaTestMsg;

@@ -7,6 +7,8 @@ const language = document.getElementById("language") as HTMLSelectElement;
 const chunkInterval = document.getElementById("chunk-interval") as HTMLSelectElement;
 const saveBtn = document.getElementById("save-btn") as HTMLButtonElement;
 const savedMsg = document.getElementById("saved-msg") as HTMLSpanElement;
+const ollamaTestBtn = document.getElementById("ollama-test-btn") as HTMLButtonElement;
+const ollamaTestStatus = document.getElementById("ollama-test-status") as HTMLSpanElement;
 const whisperTestBtn = document.getElementById("whisper-test-btn") as HTMLButtonElement;
 const whisperTestStatus = document.getElementById("whisper-test-status") as HTMLSpanElement;
 const whisperTestResult = document.getElementById("whisper-test-result") as HTMLDivElement;
@@ -46,6 +48,30 @@ saveBtn.addEventListener("click", async () => {
   setTimeout(() => {
     savedMsg.style.display = "none";
   }, 2000);
+});
+
+ollamaTestBtn.addEventListener("click", () => {
+  ollamaTestBtn.disabled = true;
+  ollamaTestStatus.textContent = "確認中...";
+
+  chrome.runtime.sendMessage(
+    {
+      type: "OLLAMA_TEST",
+      target: "background",
+      payload: {
+        ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
+        ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
+      },
+    },
+    (result: { ok: boolean; error?: string } | null) => {
+      if (result?.ok) {
+        ollamaTestStatus.textContent = "接続できました";
+      } else {
+        ollamaTestStatus.textContent = `エラー: ${result?.error ?? "不明なエラー"}`;
+      }
+      ollamaTestBtn.disabled = false;
+    },
+  );
 });
 
 function updateRecordingStatus(startedAt: number): void {
