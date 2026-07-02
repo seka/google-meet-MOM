@@ -19,7 +19,7 @@ export interface ExtensionSettings {
   chunkIntervalSec: number;
   minutesOutputDestination: string;
   recordingOutputDestination: string;
-  appearance: string;
+  appearance: Appearance;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {

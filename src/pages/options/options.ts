@@ -1,5 +1,9 @@
 import { DEFAULT_SETTINGS } from "../../types";
-import { applyAppearance, normalizeAppearance, subscribeAppearanceChanges } from "../../core/theme";
+import {
+  applyAppearance,
+  normalizeAppearance,
+  subscribeAppearanceChanges,
+} from "../../core/components/styles/theme";
 
 const ollamaUrl = document.getElementById("ollama-url") as HTMLInputElement;
 const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;

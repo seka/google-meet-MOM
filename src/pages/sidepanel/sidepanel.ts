@@ -1,7 +1,7 @@
 import type { RecordingState } from "../../types";
 import { DEFAULT_SETTINGS } from "../../types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
-import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@core/theme";
+import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@core/components/styles/theme";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
