@@ -14,10 +14,14 @@ const KIND_LABELS: Record<DownloadKind, string> = {
   transcript: "transcript",
 };
 
+const INVALID_FILENAME_CHARS = new Set(["<", ">", ":", '"', "/", "\\", "|", "?", "*"]);
+
 function sanitizeFilenamePart(value: string): string {
   const normalized = value
     .trim()
-    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
+    .split("")
+    .map((char) => (INVALID_FILENAME_CHARS.has(char) || char.charCodeAt(0) < 32 ? "_" : char))
+    .join("")
     .replace(/\s+/g, "_")
     .replace(/_+/g, "_")
     .replace(/^_+|_+$/g, "");
