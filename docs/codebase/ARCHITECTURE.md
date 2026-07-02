@@ -21,14 +21,14 @@ side panel -> background service worker -> content script + offscreen document -
 
 ## 3) Layer/Module Responsibilities
 
-| Layer or module           | Owns                                                                                       | Must not own                                      | Evidence                             |
-| ------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------- | ------------------------------------ |
-| Side panel page           | Recording button behavior, status badge, transcript/minutes display, copy/download actions | Direct audio capture, Whisper calls, Ollama calls | `src/pages/sidepanel/sidepanel.ts`   |
-| Background service worker | State transitions, offscreen lifecycle, tab capture stream ID, Ollama integration          | Google Meet DOM parsing, audio decoding           | `src/workers/background.ts`          |
-| Content script            | Meeting title and speaker event detection from Google Meet DOM                             | Transcription and persistence                     | `src/workers/content.ts`             |
-| Offscreen worker          | Audio capture, Web Audio mixing, MediaRecorder, Whisper transcription                      | User-facing page state and options UI             | `src/workers/offscreen/offscreen.ts` |
-| Persistence               | IndexedDB recording CRUD                                                                   | External API calls and rendering                  | `src/db.ts`                          |
-| Shared contracts          | Message and setting/recording types                                                        | Side effects                                      | `src/messages.ts`, `src/types.ts`    |
+| Layer or module           | Owns                                                                                       | Must not own                                      | Evidence                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Side panel page           | Recording button behavior, status badge, transcript/minutes display, copy/download actions | Direct audio capture, Whisper calls, Ollama calls | `src/pages/sidepanel/sidepanel.ts`                                                     |
+| Background service worker | State transitions, offscreen lifecycle, tab capture stream ID, Ollama integration          | Google Meet DOM parsing, audio decoding           | `src/workers/background.ts`                                                            |
+| Content script            | Meeting title and speaker event detection from Google Meet DOM                             | Transcription and persistence                     | `src/workers/content.ts`                                                               |
+| Offscreen worker          | Audio capture, Web Audio mixing, MediaRecorder, Whisper transcription                      | User-facing page state and options UI             | `src/workers/offscreen/offscreen.ts`                                                   |
+| Persistence               | IndexedDB recording CRUD                                                                   | External API calls and rendering                  | `src/db.ts`                                                                            |
+| Shared contracts          | Message and setting/recording types                                                        | Side effects                                      | `src/messages.ts`, `src/features/recording/types`, `src/features/theme-settings/types` |
 
 ## 4) Reused Patterns
 

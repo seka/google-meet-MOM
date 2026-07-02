@@ -6,8 +6,8 @@
 | ------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Files              | Lowercase role names and kebab-case for multiword source/components; tests use `*.test.ts` beside source | `log-section.ts`, `background.test.ts`                                 | `src/features/recording/components/log-section.ts`, `src/workers/background.test.ts`         |
 | Functions/methods  | camelCase                                                                                                | `ensureOffscreenDocument`, `buildSpeakerTranscript`, `getMeetingTitle` | `src/workers/background.ts`, `src/workers/offscreen/transcript.ts`, `src/workers/content.ts` |
-| Types/interfaces   | PascalCase                                                                                               | `Recording`, `ExtensionSettings`, `ExtensionMessage`                   | `src/types.ts`, `src/messages.ts`                                                            |
-| Constants/env vars | Upper snake case for exported/default constants and local fixed values; no env vars found                | `DEFAULT_SETTINGS`, `DB_NAME`, `STORE_NAME`                            | `src/types.ts`, `src/db.ts`, `docs/codebase/.codebase-scan.txt`                              |
+| Types/interfaces   | PascalCase                                                                                               | `Recording`, `ExtensionSettings`, `ExtensionMessage`                   | `src/features/recording/types`, `src/features/theme-settings/types`, `src/messages.ts`       |
+| Constants/env vars | Upper snake case for exported/default constants and local fixed values; no env vars found                | `DEFAULT_SETTINGS`, `DB_NAME`, `STORE_NAME`                            | `src/features/theme-settings/types`, `src/db.ts`, `docs/codebase/.codebase-scan.txt`         |
 
 ## 2) Formatting and Linting
 
@@ -20,7 +20,7 @@
 
 - Import grouping/order: type imports are used where appropriate, followed by runtime imports in existing source; no separate import-order rule was found.
 - Alias vs relative import policy: `@core` and `@features` aliases are configured; workers and shared files mostly use relative imports.
-- Public exports/barrel policy: no barrel export convention was found; modules export functions/types directly from their files.
+- Public exports/barrel policy: feature type directories export through `types/index.ts`; other modules export functions/types directly from their files.
 
 ## 4) Error and Logging Conventions
 
@@ -38,7 +38,8 @@
 
 - `vite.config.ts`
 - `tsconfig.json`
-- `src/types.ts`
+- `src/features/recording/types`
+- `src/features/theme-settings/types`
 - `src/messages.ts`
 - `src/db.ts`
 - `src/workers/background.ts`

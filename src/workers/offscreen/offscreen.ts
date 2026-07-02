@@ -1,6 +1,7 @@
 import { saveRecording, updateRecording } from "../../db";
 import type { ExtensionMessage } from "../../messages";
-import { DEFAULT_SETTINGS, type ExtensionSettings, type SpeakerEvent } from "../../types";
+import type { SpeakerEvent } from "@features/recording/types";
+import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/theme-settings/types";
 import {
   configureAsrRuntime,
   transcribe,

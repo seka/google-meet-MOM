@@ -1,4 +1,4 @@
-import type { SpeakerEvent } from "../../types";
+import type { SpeakerEvent } from "@features/recording/types";
 
 export type WordChunk = { text: string; timestamp: [number, number] | [null, null] };
 

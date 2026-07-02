@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from "../../types";
+import { DEFAULT_SETTINGS } from "@features/theme-settings/types";
 import {
   applyAppearance,
   normalizeAppearance,

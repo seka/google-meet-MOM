@@ -15,7 +15,7 @@
 | --------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `@huggingface/transformers` | `^3.0.0`                                                                 | Whisper WASM automatic speech recognition in the offscreen worker               | `package.json`, `src/workers/offscreen/offscreen.ts`                                    |
 | Chrome Extension APIs       | Manifest V3 APIs declared in manifest                                    | Side panel, tab capture, offscreen document, storage, alarms, active tab access | `public/manifest.json`, `src/workers/background.ts`, `src/pages/sidepanel/sidepanel.ts` |
-| Ollama REST API             | Configured by URL/model, default `http://localhost:11434` and `llama3.2` | Local LLM minutes generation through `/api/chat`                                | `README.md`, `src/types.ts`, `src/workers/background.ts`                                |
+| Ollama REST API             | Configured by URL/model, default `http://localhost:11434` and `llama3.2` | Local LLM minutes generation through `/api/chat`                                | `README.md`, `src/features/theme-settings/types`, `src/workers/background.ts`           |
 
 ## 3) Development Toolchain
 
@@ -39,7 +39,7 @@ npm run dev
 
 ## 5) Environment and Config
 
-- Config sources: `public/manifest.json`, `vite.config.ts`, `tsconfig.json`, `src/types.ts`, `chrome.storage.sync`.
+- Config sources: `public/manifest.json`, `vite.config.ts`, `tsconfig.json`, `src/features/theme-settings/types`, `chrome.storage.sync`.
 - Required env vars: none found; no `.env.example` or `.env.template` was detected by the scan.
 - Runtime constraints: Chrome 114+ and local Ollama are documented prerequisites; Whisper model downloads from Hugging Face on first use; Chrome CSP allows Hugging Face CDN hosts and `http://localhost:11434`.
 - Container/CI: no containerization or CI pipeline was detected by the scan.
