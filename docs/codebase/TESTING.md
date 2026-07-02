@@ -8,7 +8,7 @@
 
 ```bash
 npm run test
-node node_modules/vitest/dist/cli.js run
+vp test
 npx vp check
 ```
 

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vp build --watch",
     "build": "vp build",
-    "test": "node node_modules/vitest/dist/cli.js run",
+    "test": "vp test",
     "prepare": "vp config"
   },
   "dependencies": {
@@ -15,12 +15,12 @@
     "@types/chrome": "^0.0.268",
     "happy-dom": "^20.10.6",
     "typescript": "^5.5.0",
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vite-plus": "latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.1",
+    "vite-plus": "0.2.1"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.1",
+    "vitest": "4.1.9"
   },
   "packageManager": "npm@11.17.0"
 }
