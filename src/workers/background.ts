@@ -6,7 +6,7 @@ import {
   generateMinutes,
   toMinutesErrorMessage,
 } from "../data/api/minutes";
-import { downloadUrlFile } from "@core/download";
+import { downloadUrlFile } from "@core/io/file_writer";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;

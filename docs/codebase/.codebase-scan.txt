@@ -52,7 +52,7 @@ src/core
 src/core/components
 src/core/components/atoms
 src/core/components/organisms
-src/core/tokens.css
+src/core/components/styles/tokens.css
 src/db.ts
 src/features
 src/features/recording
@@ -243,7 +243,7 @@ f69cfd2 chore: initial project setup
    4 src/types.ts
    3 package.json
    3 src/core/components/organisms/log-section.css
-   3 src/core/tokens.css
+   3 src/core/components/styles/tokens.css
    3 src/pages/sidepanel/sidepanel.css
    3 src/popup.css
    3 src/popup.html

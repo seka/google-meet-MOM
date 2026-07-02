@@ -17,7 +17,7 @@ const KIND_LABELS: Record<DownloadKind, string> = {
 function sanitizeFilenamePart(value: string): string {
   const normalized = value
     .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
     .replace(/\s+/g, "_")
     .replace(/_+/g, "_")
     .replace(/^_+|_+$/g, "");

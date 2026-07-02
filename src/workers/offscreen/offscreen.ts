@@ -8,7 +8,7 @@ import {
   transcribeSamples,
 } from "../../data/api/asr";
 import { buildSpeakerTranscript } from "./transcript";
-import { buildOutputFilename } from "@core/download";
+import { buildOutputFilename } from "@core/io/file_writer";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 configureAsrRuntime({
