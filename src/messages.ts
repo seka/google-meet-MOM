@@ -99,6 +99,12 @@ export interface OllamaTestMsg extends BaseMessage {
   payload: { ollamaUrl: string; ollamaModel: string };
 }
 
+export interface DownloadUrlMsg extends BaseMessage {
+  type: "DOWNLOAD_URL";
+  target: "background";
+  payload: { url: string; filename: string };
+}
+
 export type ExtensionMessage =
   | StartRecordingMsg
   | StopRecordingMsg
@@ -115,4 +121,5 @@ export type ExtensionMessage =
   | SpeakerEventsMsg
   | TranscriptChunkMsg
   | WhisperTestMsg
-  | OllamaTestMsg;
+  | OllamaTestMsg
+  | DownloadUrlMsg;

@@ -8,14 +8,16 @@ export interface Recording {
   minutes: string;
 }
 
+export type OutputDestination = "local" | "download";
+
 export interface ExtensionSettings {
   ollamaUrl: string;
   ollamaModel: string;
   whisperModel: string;
   language: string;
   chunkIntervalSec: number;
-  minutesOutputDestination: string;
-  recordingOutputDestination: string;
+  minutesOutputDestination: OutputDestination;
+  recordingOutputDestination: OutputDestination;
   appearance: string;
 }
 

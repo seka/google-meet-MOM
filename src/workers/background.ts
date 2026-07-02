@@ -6,6 +6,7 @@ import {
   generateMinutes,
   toMinutesErrorMessage,
 } from "../data/api/minutes";
+import { downloadUrlFile } from "@core/io/file_writer";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;
@@ -240,6 +241,17 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ ok: true });
           } catch (err) {
             const msg = toMinutesErrorMessage(err);
+            sendResponse({ ok: false, error: msg });
+          }
+          break;
+        }
+
+        case "DOWNLOAD_URL": {
+          try {
+            await downloadUrlFile(message.payload.url, message.payload.filename);
+            sendResponse({ ok: true });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
             sendResponse({ ok: false, error: msg });
           }
           break;

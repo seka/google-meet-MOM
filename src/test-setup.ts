@@ -14,6 +14,7 @@ vi.stubGlobal("chrome", {
   },
   tabCapture: { getMediaStreamId: vi.fn() },
   storage: { sync: { get: vi.fn() } },
+  downloads: { download: vi.fn() },
   sidePanel: { setPanelBehavior: vi.fn() },
   alarms: {
     create: vi.fn(),
