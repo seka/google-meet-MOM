@@ -183,4 +183,4 @@ chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState 
 });
 
 subscribeAppearanceChanges();
-void loadAndApplyAppearance();
+loadAndApplyAppearance().catch(() => {});
