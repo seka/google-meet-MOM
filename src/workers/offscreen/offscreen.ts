@@ -140,7 +140,7 @@ async function startRecording(
   mediaRecorder.start(1000);
 
   chunkIntervalId = setInterval(() => {
-    void processNextChunk();
+    processNextChunk().catch(() => {});
   }, settings.chunkIntervalSec * 1000);
 }
 
@@ -265,7 +265,7 @@ chrome.runtime.onMessage.addListener(
   ) => {
     if (message.target !== "offscreen") return false;
 
-    void (async () => {
+    (async () => {
       switch (message.type) {
         case "FORWARD_TO_OFFSCREEN": {
           const { streamId, meetingTitle, settings } = message.payload;
@@ -303,7 +303,7 @@ chrome.runtime.onMessage.addListener(
           break;
         }
       }
-    })();
+    })().catch(() => {});
 
     return true;
   },

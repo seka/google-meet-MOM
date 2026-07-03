@@ -257,4 +257,4 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
 });
 
 subscribeAppearanceChanges();
-void load();
+load().catch(() => {});

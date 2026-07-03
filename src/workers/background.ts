@@ -14,10 +14,10 @@ let recordingStartTime = 0;
 let meetTabId: number | null = null;
 
 // アイコンクリックでサイドパネルを開く
-void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
 // SW が録音中に終了しないよう定期アラームで維持
-void chrome.alarms.create("keepalive", { periodInMinutes: 0.2 });
+chrome.alarms.create("keepalive", { periodInMinutes: 0.2 }).catch(() => {});
 chrome.alarms.onAlarm.addListener(() => {});
 
 async function ensureOffscreenDocument(): Promise<void> {
@@ -115,7 +115,7 @@ chrome.runtime.onMessage.addListener(
   ) => {
     if (message.target === "offscreen") return false;
 
-    void (async () => {
+    (async () => {
       switch (message.type) {
         case "START_RECORDING": {
           try {
@@ -257,7 +257,7 @@ chrome.runtime.onMessage.addListener(
           break;
         }
       }
-    })();
+    })().catch(() => {});
 
     return true;
   },

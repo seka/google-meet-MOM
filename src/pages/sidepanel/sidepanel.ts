@@ -123,7 +123,7 @@ recordBtn.addEventListener("click", async () => {
 
 copyBtn.addEventListener("click", () => {
   const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
-  if (text) void navigator.clipboard.writeText(text);
+  if (text) navigator.clipboard.writeText(text).catch(() => {});
 });
 
 downloadBtn.addEventListener("click", () => {
@@ -141,7 +141,7 @@ downloadBtn.addEventListener("click", () => {
 
 openOptions.addEventListener("click", (e) => {
   e.preventDefault();
-  void chrome.runtime.openOptionsPage();
+  chrome.runtime.openOptionsPage().catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
