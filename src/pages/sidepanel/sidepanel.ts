@@ -34,6 +34,10 @@ const STATE_LABELS: Record<RecordingState, string> = {
 
 const SPINNER_STATES = new Set<RecordingState>(["transcribing", "summarizing"]);
 
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
 
@@ -123,7 +127,11 @@ recordBtn.addEventListener("click", async () => {
 
 copyBtn.addEventListener("click", () => {
   const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
-  if (text) navigator.clipboard.writeText(text).catch(() => {});
+  if (text) {
+    navigator.clipboard.writeText(text).catch((err: unknown) => {
+      updateUI("error", `コピーに失敗しました: ${toErrorMessage(err)}`);
+    });
+  }
 });
 
 downloadBtn.addEventListener("click", () => {
@@ -141,7 +149,9 @@ downloadBtn.addEventListener("click", () => {
 
 openOptions.addEventListener("click", (e) => {
   e.preventDefault();
-  chrome.runtime.openOptionsPage().catch(() => {});
+  chrome.runtime.openOptionsPage().catch((err: unknown) => {
+    updateUI("error", `設定画面を開けませんでした: ${toErrorMessage(err)}`);
+  });
 });
 
 chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
@@ -183,4 +193,6 @@ chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState 
 });
 
 subscribeAppearanceChanges();
-loadAndApplyAppearance().catch(() => {});
+loadAndApplyAppearance().catch((err: unknown) => {
+  updateUI("error", `テーマ設定を読み込めませんでした: ${toErrorMessage(err)}`);
+});

@@ -13,11 +13,19 @@ let currentRecordingId: string | null = null;
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
 
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function reportBackgroundError(err: unknown): void {
+  setState("error", { message: toErrorMessage(err) });
+}
+
 // アイコンクリックでサイドパネルを開く
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(reportBackgroundError);
 
 // SW が録音中に終了しないよう定期アラームで維持
-chrome.alarms.create("keepalive", { periodInMinutes: 0.2 }).catch(() => {});
+chrome.alarms.create("keepalive", { periodInMinutes: 0.2 }).catch(reportBackgroundError);
 chrome.alarms.onAlarm.addListener(() => {});
 
 async function ensureOffscreenDocument(): Promise<void> {
@@ -102,8 +110,7 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
     await updateRecording(recordingId, { minutes });
     setState("done", { recordingId, minutes });
   } catch (err) {
-    const msg = toMinutesErrorMessage(err);
-    setState("error", { message: `議事録生成エラー: ${msg}` });
+    setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
   }
 }
 
@@ -257,7 +264,7 @@ chrome.runtime.onMessage.addListener(
           break;
         }
       }
-    })().catch(() => {});
+    })().catch(reportBackgroundError);
 
     return true;
   },

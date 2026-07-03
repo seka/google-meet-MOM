@@ -26,6 +26,22 @@ let isProcessingChunk = false;
 let chunkIntervalId: ReturnType<typeof setInterval> | null = null;
 let pendingSettings: ExtensionSettings | null = null;
 
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function reportOffscreenError(err: unknown, sendResponse?: (response?: unknown) => void): void {
+  const msg = toErrorMessage(err);
+  sendResponse?.({ ok: false, error: msg });
+  chrome.runtime.sendMessage(
+    {
+      type: "ERROR",
+      payload: { message: msg },
+    },
+    () => {},
+  );
+}
+
 function sendWhisperProgress(progress: number): void {
   chrome.runtime.sendMessage(
     {
@@ -140,7 +156,7 @@ async function startRecording(
   mediaRecorder.start(1000);
 
   chunkIntervalId = setInterval(() => {
-    processNextChunk().catch(() => {});
+    processNextChunk().catch(reportOffscreenError);
   }, settings.chunkIntervalSec * 1000);
 }
 
@@ -303,7 +319,9 @@ chrome.runtime.onMessage.addListener(
           break;
         }
       }
-    })().catch(() => {});
+    })().catch((err: unknown) => {
+      reportOffscreenError(err, sendResponse);
+    });
 
     return true;
   },

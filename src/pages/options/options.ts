@@ -42,6 +42,10 @@ interface RecordingSession {
 let recordingSession: RecordingSession | null = null;
 let recordingTimer: ReturnType<typeof setInterval> | null = null;
 
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 async function load(): Promise<void> {
   const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   ollamaUrl.value = s["ollamaUrl"] as string;
@@ -87,6 +91,7 @@ saveBtn.addEventListener("click", async () => {
   });
 
   applyAppearance(selectedAppearance);
+  savedMsg.textContent = "保存しました";
   savedMsg.style.display = "inline";
   setTimeout(() => {
     savedMsg.style.display = "none";
@@ -257,4 +262,7 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
 });
 
 subscribeAppearanceChanges();
-load().catch(() => {});
+load().catch((err: unknown) => {
+  savedMsg.textContent = `設定を読み込めませんでした: ${toErrorMessage(err)}`;
+  savedMsg.style.display = "inline";
+});
