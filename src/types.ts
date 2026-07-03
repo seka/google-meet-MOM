@@ -17,8 +17,8 @@ export interface ExtensionSettings {
   whisperModel: string;
   language: string;
   chunkIntervalSec: number;
-  minutesOutputDestination: string;
-  recordingOutputDestination: string;
+  minutesOutputDestination: OutputDestination;
+  recordingOutputDestination: OutputDestination;
   appearance: Appearance;
 }
 
