@@ -9,6 +9,7 @@ export interface Recording {
 }
 
 export type OutputDestination = "local" | "download";
+export type Appearance = "system" | "light" | "dark";
 
 export interface ExtensionSettings {
   ollamaUrl: string;
@@ -18,7 +19,7 @@ export interface ExtensionSettings {
   chunkIntervalSec: number;
   minutesOutputDestination: OutputDestination;
   recordingOutputDestination: OutputDestination;
-  appearance: string;
+  appearance: Appearance;
 }
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {

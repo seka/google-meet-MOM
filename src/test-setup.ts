@@ -13,7 +13,10 @@ vi.stubGlobal("chrome", {
     query: vi.fn().mockResolvedValue([]),
   },
   tabCapture: { getMediaStreamId: vi.fn() },
-  storage: { sync: { get: vi.fn() } },
+  storage: {
+    sync: { get: vi.fn() },
+    onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
+  },
   downloads: { download: vi.fn() },
   sidePanel: { setPanelBehavior: vi.fn() },
   alarms: {
