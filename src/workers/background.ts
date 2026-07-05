@@ -13,6 +13,25 @@ let currentRecordingId: string | null = null;
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
 
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function toRecordingStartErrorMessage(err: unknown): string {
+  const message = toErrorMessage(err);
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    normalizedMessage.includes("extension has not been invoked") ||
+    normalizedMessage.includes("activetab") ||
+    normalizedMessage.includes("chrome pages cannot be captured")
+  ) {
+    return "録音対象タブをキャプチャできません。Google Meet のタブを選択した状態で拡張機能アイコンからサイドパネルを開き直して、もう一度開始してください。chrome:// などの Chrome 内部ページは録音できません。";
+  }
+
+  return message;
+}
+
 // アイコンクリックでサイドパネルを開く
 void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
@@ -88,6 +107,22 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
   });
 }
 
+async function getTabMediaStreamId(tabId: number): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, (id) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!id) {
+        reject(new Error("録音用ストリーム ID を取得できませんでした"));
+        return;
+      }
+      resolve(id);
+    });
+  });
+}
+
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   setState("summarizing", { recordingId });
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
@@ -124,16 +159,7 @@ chrome.runtime.onMessage.addListener(
             recordingStartTime = Date.now();
             meetTabId = message.payload.tabId ?? null;
 
-            // バックグラウンドで streamId を取得（tabCapture パーミッションにより可能）
-            const streamId = await new Promise<string>((resolve, reject) => {
-              chrome.tabCapture.getMediaStreamId({ targetTabId: message.payload.tabId }, (id) => {
-                if (chrome.runtime.lastError) {
-                  reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                  resolve(id);
-                }
-              });
-            });
+            const streamId = await getTabMediaStreamId(message.payload.tabId);
 
             // content script に話者追跡を開始させる
             if (meetTabId) {
@@ -155,7 +181,7 @@ chrome.runtime.onMessage.addListener(
             setState("recording");
             sendResponse({ ok: true });
           } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = toRecordingStartErrorMessage(err);
             setState("error", { message: msg });
             sendResponse({ ok: false, error: msg });
           }

@@ -45,6 +45,9 @@ const BASE_PAYLOAD = {
   tabId: 42,
 } as const;
 
+const TAB_CAPTURE_PERMISSION_ERROR =
+  "録音対象タブをキャプチャできません。Google Meet のタブを選択した状態で拡張機能アイコンからサイドパネルを開き直して、もう一度開始してください。chrome:// などの Chrome 内部ページは録音できません。";
+
 describe("START_RECORDING", () => {
   it("getMediaStreamId をバックグラウンドから targetTabId 付きで呼ぶ", async () => {
     (chrome.tabCapture.getMediaStreamId as ReturnType<typeof vi.fn>).mockImplementation(
@@ -94,11 +97,12 @@ describe("START_RECORDING", () => {
     );
   });
 
-  it("getMediaStreamId が失敗したときエラー状態に遷移し sendResponse に ok:false を返す", async () => {
+  it("activeTab 未付与や Chrome 内部ページでキャプチャできないとき案内付きエラーを返す", async () => {
     (chrome.tabCapture.getMediaStreamId as ReturnType<typeof vi.fn>).mockImplementation(
       (_opts: unknown, cb: (id: string | undefined) => void) => {
         (chrome.runtime as unknown as Record<string, unknown>).lastError = {
-          message: "Extension has not been invoked",
+          message:
+            "Extension has not been invoked for the current page (see activeTab permission). Chrome pages cannot be captured.",
         };
         cb(undefined);
         (chrome.runtime as unknown as Record<string, unknown>).lastError = undefined;
@@ -113,13 +117,19 @@ describe("START_RECORDING", () => {
     );
 
     await vi.waitFor(() =>
-      expect(sendResponse).toHaveBeenCalledWith(expect.objectContaining({ ok: false })),
+      expect(sendResponse).toHaveBeenCalledWith({
+        ok: false,
+        error: TAB_CAPTURE_PERMISSION_ERROR,
+      }),
     );
 
     expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "STATE_CHANGED",
-        payload: expect.objectContaining({ state: "error" }),
+        payload: expect.objectContaining({
+          state: "error",
+          message: TAB_CAPTURE_PERMISSION_ERROR,
+        }),
       }),
       expect.any(Function),
     );
