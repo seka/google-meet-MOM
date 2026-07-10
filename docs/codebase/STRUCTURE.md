@@ -2,16 +2,16 @@
 
 ## 1) Top-Level Map
 
-| Path            | Purpose                                                                                            | Evidence                                                                                                                |
-| --------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `src/`          | Extension source code, including workers, pages, shared types, storage, and UI components          | `docs/codebase/.codebase-scan.txt`, `vite.config.ts`                                                                    |
-| `src/workers/`  | Background service worker, content script, offscreen audio/transcription worker, and related tests | `vite.config.ts`, `src/workers/background.ts`, `src/workers/content.ts`, `src/workers/offscreen/offscreen.ts`           |
-| `src/pages/`    | Side panel and options page HTML/CSS/TS entry points                                               | `vite.config.ts`, `src/pages/sidepanel/sidepanel.ts`, `src/pages/options/options.ts`                                    |
-| `src/core/`     | Shared design tokens and generic UI component styles/helpers                                       | `src/core/components/styles/tokens.css`, `src/core/components/atoms/badge.ts`                                           |
-| `src/features/` | Feature-specific UI components and domain types                                                    | `src/features/recording/components/log-section.ts`, `src/features/recording/types`, `src/features/theme-settings/types` |
-| `public/`       | Extension manifest and icon assets copied into the build output                                    | `public/manifest.json`, `scripts/gen-icons.mjs`                                                                         |
-| `docs/`         | Project constraints and generated codebase documentation                                           | `docs/CONSTRAINTS.md`, `docs/codebase/.codebase-scan.txt`                                                               |
-| `.github/`      | PR template, issue templates, and Copilot project instructions                                     | `.github/pull_request_template.md`, `.github/copilot-instructions.md`                                                   |
+| Path            | Purpose                                                                                            | Evidence                                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `src/`          | Extension source code, including workers, pages, shared types, storage, and UI components          | `docs/codebase/.codebase-scan.txt`, `vite.config.ts`                                                          |
+| `src/workers/`  | Background service worker, content script, offscreen audio/transcription worker, and related tests | `vite.config.ts`, `src/workers/background.ts`, `src/workers/content.ts`, `src/workers/offscreen/offscreen.ts` |
+| `src/pages/`    | Side panel and options page HTML/CSS/TS entry points                                               | `vite.config.ts`, `src/pages/sidepanel/sidepanel.ts`, `src/pages/options/options.ts`                          |
+| `src/core/`     | Shared design tokens and generic UI component styles/helpers                                       | `src/core/components/styles/tokens.css`, `src/core/components/atoms/badge.ts`                                 |
+| `src/features/` | Feature-specific UI components for recording logs                                                  | `src/features/recording/components/log-section.ts`, `src/features/recording/components/log-item.ts`           |
+| `public/`       | Extension manifest and icon assets copied into the build output                                    | `public/manifest.json`, `scripts/gen-icons.mjs`                                                               |
+| `docs/`         | Project constraints and generated codebase documentation                                           | `docs/CONSTRAINTS.md`, `docs/codebase/.codebase-scan.txt`                                                     |
+| `.github/`      | PR template, issue templates, and Copilot project instructions                                     | `.github/pull_request_template.md`, `.github/copilot-instructions.md`                                         |
 
 ## 2) Entry Points
 
@@ -21,15 +21,15 @@
 
 ## 3) Module Boundaries
 
-| Boundary                                     | What belongs here                                                                                                           | What must not be here                                         |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `src/workers/background.ts`                  | Extension state, side panel behavior setup, offscreen lifecycle, tab capture stream ID retrieval, Ollama minutes generation | DOM scraping logic and raw audio transcription implementation |
-| `src/workers/content.ts`                     | Google Meet DOM queries, meeting title extraction, active speaker tracking                                                  | Recording, Whisper, IndexedDB writes, Ollama calls            |
-| `src/workers/offscreen/`                     | Media stream capture/mixing, chunk transcription, final transcription, speaker transcript assembly                          | Side panel UI control and Meet DOM selectors                  |
-| `src/pages/sidepanel/`                       | User recording controls, live log display, copy/download UI, options link                                                   | Audio processing and external API calls                       |
-| `src/pages/options/`                         | User settings persisted to `chrome.storage.sync`, Whisper microphone test UI                                                | Normal meeting recording flow                                 |
-| `src/db.ts`                                  | IndexedDB persistence for recordings                                                                                        | UI rendering and message routing                              |
-| `src/messages.ts` and `src/features/*/types` | Shared message and feature domain types                                                                                     | Runtime side effects                                          |
+| Boundary                             | What belongs here                                                                                                           | What must not be here                                         |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `src/workers/background.ts`          | Extension state, side panel behavior setup, offscreen lifecycle, tab capture stream ID retrieval, Ollama minutes generation | DOM scraping logic and raw audio transcription implementation |
+| `src/workers/content.ts`             | Google Meet DOM queries, meeting title extraction, active speaker tracking                                                  | Recording, Whisper, IndexedDB writes, Ollama calls            |
+| `src/workers/offscreen/`             | Media stream capture/mixing, chunk transcription, final transcription, speaker transcript assembly                          | Side panel UI control and Meet DOM selectors                  |
+| `src/pages/sidepanel/`               | User recording controls, live log display, copy/download UI, options link                                                   | Audio processing and external API calls                       |
+| `src/pages/options/`                 | User settings persisted to `chrome.storage.sync`, Whisper microphone test UI                                                | Normal meeting recording flow                                 |
+| `src/db.ts`                          | IndexedDB persistence for recordings                                                                                        | UI rendering and message routing                              |
+| `src/messages.ts` and `src/types.ts` | Shared message and domain types                                                                                             | Runtime side effects                                          |
 
 ## 4) Naming and Organization Rules
 

@@ -7,15 +7,15 @@
 | Google Meet web page           | DOM integration through content script | Meeting title and active speaker detection                                | Chrome content script host permission for `https://meet.google.com/*` | high        | `public/manifest.json`, `src/workers/content.ts`                                                 |
 | Chrome Extension APIs          | Browser platform APIs                  | Side panel, tab capture, offscreen document, settings, alarms, active tab | Extension permissions in manifest                                     | high        | `public/manifest.json`, `src/workers/background.ts`, `src/pages/sidepanel/sidepanel.ts`          |
 | Hugging Face model hosting/CDN | Network download for model files       | First-use Whisper model download for `@huggingface/transformers`          | No app credential found; allowed by CSP/host permissions              | high        | `public/manifest.json`, `README.md`, `docs/CONSTRAINTS.md`, `src/workers/offscreen/offscreen.ts` |
-| Ollama                         | Local HTTP API                         | Generate Markdown meeting minutes from transcript                         | No auth in current request; URL/model user-configured                 | high        | `src/workers/background.ts`, `src/features/theme-settings/types`, `README.md`                    |
+| Ollama                         | Local HTTP API                         | Generate Markdown meeting minutes from transcript                         | No auth in current request; URL/model user-configured                 | high        | `src/workers/background.ts`, `src/types.ts`, `README.md`                                         |
 | Microphone and tab audio       | Browser media capture                  | Capture local microphone and Google Meet tab audio                        | Browser permission mediated by Chrome APIs                            | high        | `public/manifest.json`, `src/workers/background.ts`, `src/workers/offscreen/offscreen.ts`        |
 
 ## 2) Data Stores
 
-| Store                                                           | Role                                                                              | Access layer                                                                                      | Key risk                                                                 | Evidence                                                            |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| IndexedDB database `google-meet-mom`, object store `recordings` | Stores audio blob, transcript, minutes, title, date, duration                     | `src/db.ts`                                                                                       | Browser storage size and blob retention behavior are not bounded in code | `src/db.ts`, `src/features/recording/types`                         |
-| `chrome.storage.sync`                                           | Stores settings such as Ollama URL/model, Whisper model, language, chunk interval | `src/pages/options/options.ts`, `src/workers/background.ts`, `src/workers/offscreen/offscreen.ts` | Sync storage is user/browser scoped; validation is minimal               | `src/features/theme-settings/types`, `src/pages/options/options.ts` |
+| Store                                                           | Role                                                                              | Access layer                                                                                      | Key risk                                                                 | Evidence                                       |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------- |
+| IndexedDB database `google-meet-mom`, object store `recordings` | Stores audio blob, transcript, minutes, title, date, duration                     | `src/db.ts`                                                                                       | Browser storage size and blob retention behavior are not bounded in code | `src/db.ts`, `src/types.ts`                    |
+| `chrome.storage.sync`                                           | Stores settings such as Ollama URL/model, Whisper model, language, chunk interval | `src/pages/options/options.ts`, `src/workers/background.ts`, `src/workers/offscreen/offscreen.ts` | Sync storage is user/browser scoped; validation is minimal               | `src/types.ts`, `src/pages/options/options.ts` |
 
 ## 3) Secrets and Credentials Handling
 
@@ -40,8 +40,7 @@
 - `README.md`
 - `docs/CONSTRAINTS.md`
 - `public/manifest.json`
-- `src/features/recording/types`
-- `src/features/theme-settings/types`
+- `src/types.ts`
 - `src/db.ts`
 - `src/workers/background.ts`
 - `src/workers/content.ts`
