@@ -32,11 +32,15 @@ function toRecordingStartErrorMessage(err: unknown): string {
   return message;
 }
 
+function reportBackgroundError(err: unknown): void {
+  setState("error", { message: toErrorMessage(err) });
+}
+
 // アイコンクリックでサイドパネルを開く
-void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(reportBackgroundError);
 
 // SW が録音中に終了しないよう定期アラームで維持
-void chrome.alarms.create("keepalive", { periodInMinutes: 0.2 });
+chrome.alarms.create("keepalive", { periodInMinutes: 0.2 }).catch(reportBackgroundError);
 chrome.alarms.onAlarm.addListener(() => {});
 
 async function ensureOffscreenDocument(): Promise<void> {
@@ -137,8 +141,7 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
     await updateRecording(recordingId, { minutes });
     setState("done", { recordingId, minutes });
   } catch (err) {
-    const msg = toMinutesErrorMessage(err);
-    setState("error", { message: `議事録生成エラー: ${msg}` });
+    setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
   }
 }
 
@@ -150,7 +153,7 @@ chrome.runtime.onMessage.addListener(
   ) => {
     if (message.target === "offscreen") return false;
 
-    void (async () => {
+    (async () => {
       switch (message.type) {
         case "START_RECORDING": {
           try {
@@ -283,7 +286,7 @@ chrome.runtime.onMessage.addListener(
           break;
         }
       }
-    })();
+    })().catch(reportBackgroundError);
 
     return true;
   },

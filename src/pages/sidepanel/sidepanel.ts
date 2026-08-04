@@ -1,6 +1,7 @@
 import type { RecordingState } from "../../types";
 import { DEFAULT_SETTINGS } from "../../types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
+import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@core/components/styles/theme";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
@@ -32,6 +33,10 @@ const STATE_LABELS: Record<RecordingState, string> = {
 };
 
 const SPINNER_STATES = new Set<RecordingState>(["transcribing", "summarizing"]);
+
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
@@ -122,7 +127,11 @@ recordBtn.addEventListener("click", async () => {
 
 copyBtn.addEventListener("click", () => {
   const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
-  if (text) void navigator.clipboard.writeText(text);
+  if (text) {
+    navigator.clipboard.writeText(text).catch((err: unknown) => {
+      updateUI("error", `コピーに失敗しました: ${toErrorMessage(err)}`);
+    });
+  }
 });
 
 downloadBtn.addEventListener("click", () => {
@@ -140,7 +149,9 @@ downloadBtn.addEventListener("click", () => {
 
 openOptions.addEventListener("click", (e) => {
   e.preventDefault();
-  void chrome.runtime.openOptionsPage();
+  chrome.runtime.openOptionsPage().catch((err: unknown) => {
+    updateUI("error", `設定画面を開けませんでした: ${toErrorMessage(err)}`);
+  });
 });
 
 chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
@@ -179,4 +190,9 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
 
 chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState } | null) => {
   if (res) updateUI(res.state);
+});
+
+subscribeAppearanceChanges();
+loadAndApplyAppearance().catch((err: unknown) => {
+  updateUI("error", `テーマ設定を読み込めませんでした: ${toErrorMessage(err)}`);
 });

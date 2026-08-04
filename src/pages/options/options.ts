@@ -1,4 +1,9 @@
 import { DEFAULT_SETTINGS } from "../../types";
+import {
+  applyAppearance,
+  normalizeAppearance,
+  subscribeAppearanceChanges,
+} from "../../core/components/styles/theme";
 
 const ollamaUrl = document.getElementById("ollama-url") as HTMLInputElement;
 const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;
@@ -37,6 +42,10 @@ interface RecordingSession {
 let recordingSession: RecordingSession | null = null;
 let recordingTimer: ReturnType<typeof setInterval> | null = null;
 
+function toErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 async function load(): Promise<void> {
   const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   ollamaUrl.value = s["ollamaUrl"] as string;
@@ -46,7 +55,8 @@ async function load(): Promise<void> {
   chunkInterval.value = String(s["chunkIntervalSec"]);
   minutesOutputDestination.value = s["minutesOutputDestination"] as string;
   recordingOutputDestination.value = s["recordingOutputDestination"] as string;
-  appearance.value = s["appearance"] as string;
+  appearance.value = normalizeAppearance(s["appearance"]);
+  applyAppearance(normalizeAppearance(s["appearance"]));
   appVersion.textContent = chrome.runtime.getManifest().version;
 }
 
@@ -67,6 +77,8 @@ navItems.forEach((item) => {
 });
 
 saveBtn.addEventListener("click", async () => {
+  const selectedAppearance = normalizeAppearance(appearance.value);
+
   await chrome.storage.sync.set({
     ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
     ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
@@ -75,13 +87,19 @@ saveBtn.addEventListener("click", async () => {
     chunkIntervalSec: Number(chunkInterval.value),
     minutesOutputDestination: minutesOutputDestination.value,
     recordingOutputDestination: recordingOutputDestination.value,
-    appearance: appearance.value,
+    appearance: selectedAppearance,
   });
 
+  applyAppearance(selectedAppearance);
+  savedMsg.textContent = "保存しました";
   savedMsg.style.display = "inline";
   setTimeout(() => {
     savedMsg.style.display = "none";
   }, 2000);
+});
+
+appearance.addEventListener("change", () => {
+  applyAppearance(normalizeAppearance(appearance.value));
 });
 
 ollamaTestBtn.addEventListener("click", () => {
@@ -243,4 +261,8 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
   }
 });
 
-void load();
+subscribeAppearanceChanges();
+load().catch((err: unknown) => {
+  savedMsg.textContent = `設定を読み込めませんでした: ${toErrorMessage(err)}`;
+  savedMsg.style.display = "inline";
+});
