@@ -55,7 +55,7 @@ export function buildOutputFilename({
 
 export function downloadUrlFile(url: string, filename: string): Promise<number> {
   return new Promise((resolve, reject) => {
-    chrome.downloads.download({ url, filename, saveAs: false }, (downloadId) => {
+    chrome.downloads.download({ url, filename, saveAs: true }, (downloadId) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
