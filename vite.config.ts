@@ -1,7 +1,26 @@
 import { defineConfig } from "vite-plus";
+import { execFileSync } from "node:child_process";
 import { resolve } from "path";
 
+function getBuildId(): string {
+  try {
+    const commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+      encoding: "utf8",
+    }).trim();
+    const isDirty =
+      execFileSync("git", ["status", "--short", "--untracked-files=normal"], {
+        encoding: "utf8",
+      }).trim().length > 0;
+    return isDirty ? `${commit}-dirty` : commit;
+  } catch {
+    return "unknown";
+  }
+}
+
 export default defineConfig({
+  define: {
+    __BUILD_ID__: JSON.stringify(getBuildId()),
+  },
   staged: {
     "*": "vp check --fix",
   },
