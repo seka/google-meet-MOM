@@ -57,7 +57,7 @@ async function load(): Promise<void> {
   recordingOutputDestination.value = s["recordingOutputDestination"] as string;
   appearance.value = normalizeAppearance(s["appearance"]);
   applyAppearance(normalizeAppearance(s["appearance"]));
-  appVersion.textContent = chrome.runtime.getManifest().version;
+  appVersion.textContent = `${chrome.runtime.getManifest().version} (${__BUILD_ID__})`;
 }
 
 function showScreen(screenName: string): void {
