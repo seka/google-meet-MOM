@@ -55,7 +55,7 @@ export function buildOutputFilename({
 
 export function downloadUrlFile(url: string, filename: string): Promise<number> {
   return new Promise((resolve, reject) => {
-    chrome.downloads.download({ url, filename, saveAs: false }, (downloadId) => {
+    chrome.downloads.download({ url, filename, saveAs: true }, (downloadId) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
@@ -63,4 +63,23 @@ export function downloadUrlFile(url: string, filename: string): Promise<number> 
       resolve(downloadId ?? 0);
     });
   });
+}
+
+export function buildMinutesMarkdown(input: {
+  meetingTitle: string;
+  generatedAt: string;
+  minutes: string;
+}): string {
+  return [`# ${input.meetingTitle}`, "", `生成日時: ${input.generatedAt}`, "", input.minutes].join(
+    "\n",
+  );
+}
+
+export async function downloadTextFile(input: {
+  text: string;
+  filename: string;
+  mimeType: string;
+}): Promise<number> {
+  const url = `data:${input.mimeType};charset=utf-8,${encodeURIComponent(input.text)}`;
+  return downloadUrlFile(url, input.filename);
 }
