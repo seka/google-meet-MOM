@@ -1,5 +1,5 @@
-import type { RecordingState } from "../../types";
-import { DEFAULT_SETTINGS } from "../../types";
+import type { RecordingState } from "@features/recording/types";
+import { DEFAULT_SETTINGS } from "@features/theme-settings/types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@core/components/styles/theme";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vite-plus/test";
-import { DEFAULT_SETTINGS } from "../types";
+import { DEFAULT_SETTINGS } from "@features/theme-settings/types";
 import type { ExtensionMessage } from "../messages";
 
 type SendResponse = (response?: unknown) => void;

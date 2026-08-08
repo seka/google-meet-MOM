@@ -1,13 +1,3 @@
-export interface Recording {
-  id: string;
-  date: string;
-  meetingTitle: string;
-  duration: number;
-  audioBlob: Blob;
-  transcript: string;
-  minutes: string;
-}
-
 export type OutputDestination = "local" | "download";
 export type Appearance = "system" | "light" | "dark";
 
@@ -32,16 +22,3 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   recordingOutputDestination: "local",
   appearance: "system",
 };
-
-export type RecordingState =
-  | "idle"
-  | "recording"
-  | "transcribing"
-  | "summarizing"
-  | "done"
-  | "error";
-
-export interface SpeakerEvent {
-  name: string;
-  absoluteTime: number; // Date.now() の絶対タイムスタンプ
-}

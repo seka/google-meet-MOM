@@ -1,4 +1,4 @@
-import type { Recording } from "./types";
+import type { Recording } from "@features/recording/types";
 
 const DB_NAME = "google-meet-mom";
 const DB_VERSION = 1;

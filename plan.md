@@ -193,7 +193,7 @@ google-meet-mom/
 │   ├── background.ts             # バックグラウンドスクリプト
 │   ├── storage.ts                # ローカルストレージ管理
 │   ├── formatter.ts              # ダウンロード形式変換
-│   └── types.ts                  # 型定義
+│   └── features/                 # 機能別の型定義・一部の UI 部品
 ├── public/
 │   ├── manifest.json             # Extension設定
 │   ├── side-panel.html           # Side Panel HTML
