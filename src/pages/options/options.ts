@@ -3,7 +3,7 @@ import {
   applyAppearance,
   normalizeAppearance,
   subscribeAppearanceChanges,
-} from "../../core/components/styles/theme";
+} from "@features/theme-settings/theme";
 
 const ollamaUrl = document.getElementById("ollama-url") as HTMLInputElement;
 const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;
