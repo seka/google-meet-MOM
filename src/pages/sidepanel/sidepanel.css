@@ -2,10 +2,10 @@
 @import "@core/components/atoms/button.css";
 @import "@core/components/atoms/badge.css";
 @import "@core/components/atoms/icon.css";
-@import "@core/components/organisms/result-section.css";
 @import "@features/recording/components/log-section/log-section.css";
 @import "@features/recording/components/log-item/log-item.css";
 @import "@features/recording/components/recording-controls/recording-controls.css";
+@import "@features/recording/components/recording-result/recording-result.css";
 
 * {
   box-sizing: border-box;
@@ -158,31 +158,8 @@ html[data-theme="dark"] body {
   border-left-color: var(--primary);
 }
 
-.tabs {
-  border-bottom-color: var(--border);
-}
-
-.tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-}
-
-.tab-content pre {
-  border-color: var(--border);
-}
-
-.btn-secondary {
-  border-color: #b8c4d2;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #eef3f8;
-}
-
 html[data-theme="dark"] .fab-sm:hover,
-html[data-theme="dark"] .log-chunk,
-html[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+html[data-theme="dark"] .log-chunk {
   background: #242d36;
 }
 
@@ -204,8 +181,7 @@ html[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
   }
 
   html:not([data-theme]) .fab-sm:hover,
-  html:not([data-theme]) .log-chunk,
-  html:not([data-theme]) .btn-secondary:hover:not(:disabled) {
+  html:not([data-theme]) .log-chunk {
     background: #242d36;
   }
 }

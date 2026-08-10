@@ -2,19 +2,14 @@ import type { RecordingState } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section/log-section";
 import { initializeRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
+import { initializeRecordingResult } from "@features/recording/components/recording-result/recording-result";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
 
 const logContent = document.getElementById("log-content") as HTMLDivElement;
 const logPlaceholder = document.getElementById("log-placeholder") as HTMLParagraphElement;
-const resultSection = document.getElementById("result-section") as HTMLElement;
-const transcriptText = document.getElementById("transcript-text") as HTMLPreElement;
-const minutesText = document.getElementById("minutes-text") as HTMLPreElement;
-const copyBtn = document.getElementById("copy-btn") as HTMLButtonElement;
-const downloadBtn = document.getElementById("download-btn") as HTMLButtonElement;
 const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
 
 let currentState: RecordingState = "idle";
-let currentTab: "transcript" | "minutes" = "transcript";
 
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -25,21 +20,6 @@ function updateUI(state: RecordingState, message = ""): void {
   recordingControls.render(state, message);
 }
 
-function switchTab(tab: "transcript" | "minutes"): void {
-  currentTab = tab;
-  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((el) => {
-    el.classList.toggle("active", el.dataset.tab === tab);
-  });
-  (document.getElementById("transcript-tab") as HTMLElement).hidden = tab !== "transcript";
-  (document.getElementById("minutes-tab") as HTMLElement).hidden = tab !== "minutes";
-}
-
-document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    switchTab(btn.dataset.tab as "transcript" | "minutes");
-  });
-});
-
 async function toggleRecording(): Promise<void> {
   if (currentState === "recording") {
     chrome.runtime.sendMessage({ type: "STOP_RECORDING", target: "background" }, () => {});
@@ -49,9 +29,7 @@ async function toggleRecording(): Promise<void> {
   if (currentState !== "idle" && currentState !== "done" && currentState !== "error") return;
 
   resetLog(logContent, logPlaceholder);
-  resultSection.hidden = true;
-  transcriptText.textContent = "";
-  minutesText.textContent = "";
+  recordingResult.reset();
 
   const [meetTab] = await chrome.tabs.query({
     active: true,
@@ -87,28 +65,7 @@ async function toggleRecording(): Promise<void> {
 const recordingControls = initializeRecordingControls(() => {
   void toggleRecording();
 });
-
-copyBtn.addEventListener("click", () => {
-  const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
-  if (text) {
-    navigator.clipboard.writeText(text).catch((err: unknown) => {
-      updateUI("error", `コピーに失敗しました: ${toErrorMessage(err)}`);
-    });
-  }
-});
-
-downloadBtn.addEventListener("click", () => {
-  const text = currentTab === "transcript" ? transcriptText.textContent : minutesText.textContent;
-  const filename = currentTab === "transcript" ? "transcript.txt" : "minutes.md";
-  if (!text) return;
-  const blob = new Blob([text], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-});
+const recordingResult = initializeRecordingResult((message) => updateUI("error", message));
 
 openOptions.addEventListener("click", (e) => {
   e.preventDefault();
@@ -137,17 +94,13 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
     updateUI(state, msg ?? "");
 
     if (state === "done" && minutes) {
-      minutesText.textContent = minutes;
-      resultSection.hidden = false;
-      if (!transcriptText.textContent) switchTab("minutes");
+      recordingResult.showMinutes(minutes);
     }
   }
 
   if (message.type === "TRANSCRIPTION_DONE") {
     const { transcript } = (message as { payload: { transcript: string } }).payload;
-    transcriptText.textContent = transcript;
-    resultSection.hidden = false;
-    switchTab("transcript");
+    recordingResult.showTranscript(transcript);
   }
 });
 
