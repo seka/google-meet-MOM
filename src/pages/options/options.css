@@ -1,10 +1,10 @@
 @import "@core/components/styles/tokens.css";
 @import "@core/components/atoms/button.css";
 @import "@core/components/atoms/icon.css";
-@import "@features/theme-settings/components/settings-navigation/settings-navigation.css";
-@import "@features/theme-settings/components/settings-form/settings-form.css";
-@import "@features/theme-settings/components/connection-test/connection-test.css";
-@import "@features/theme-settings/components/about-section/about-section.css";
+@import "@features/settings/components/settings-navigation/settings-navigation.css";
+@import "@features/settings/components/settings-form/settings-form.css";
+@import "@features/settings/components/connection-test/connection-test.css";
+@import "@features/settings/components/about-section/about-section.css";
 
 * {
   box-sizing: border-box;

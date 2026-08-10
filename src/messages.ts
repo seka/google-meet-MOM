@@ -1,5 +1,5 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
-import type { ExtensionSettings } from "@features/theme-settings/types";
+import type { ExtensionSettings } from "@features/settings/types";
 
 export type MessageTarget = "background" | "offscreen";
 
