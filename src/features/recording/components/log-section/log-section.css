@@ -26,8 +26,8 @@
 .log-area {
   flex: 1;
   overflow-y: auto;
-  background: var(--surface-neutral);
-  border: 1px solid var(--border-neutral);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 12px;
   font-size: 13px;

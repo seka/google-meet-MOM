@@ -2,7 +2,7 @@
   padding: 10px 12px;
   margin-bottom: 8px;
   border-left: 3px solid var(--primary);
-  background: var(--bg);
+  background: #eef3f8;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   white-space: pre-wrap;
   word-break: break-word;
@@ -13,4 +13,14 @@
 
 .log-chunk:last-child {
   margin-bottom: 0;
+}
+
+html[data-theme="dark"] .log-chunk {
+  background: #242d36;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) .log-chunk {
+    background: #242d36;
+  }
 }

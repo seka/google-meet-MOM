@@ -1,12 +1,10 @@
 import type { RecordingState } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
-import { appendChunk, resetLog } from "@features/recording/components/log-section/log-section";
+import { initializeRecordingLog } from "@features/recording/components/log-section/log-section";
 import { initializeRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
 import { initializeRecordingResult } from "@features/recording/components/recording-result/recording-result";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
 
-const logContent = document.getElementById("log-content") as HTMLDivElement;
-const logPlaceholder = document.getElementById("log-placeholder") as HTMLParagraphElement;
 const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
 
 let currentState: RecordingState = "idle";
@@ -28,7 +26,7 @@ async function toggleRecording(): Promise<void> {
 
   if (currentState !== "idle" && currentState !== "done" && currentState !== "error") return;
 
-  resetLog(logContent, logPlaceholder);
+  recordingLog.reset();
   recordingResult.reset();
 
   const [meetTab] = await chrome.tabs.query({
@@ -65,6 +63,7 @@ async function toggleRecording(): Promise<void> {
 const recordingControls = initializeRecordingControls(() => {
   void toggleRecording();
 });
+const recordingLog = initializeRecordingLog();
 const recordingResult = initializeRecordingResult((message) => updateUI("error", message));
 
 openOptions.addEventListener("click", (e) => {
@@ -77,7 +76,7 @@ openOptions.addEventListener("click", (e) => {
 chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
   if (message.type === "TRANSCRIPT_CHUNK") {
     const { text } = message.payload as { text: string; chunkIndex: number };
-    appendChunk(logContent, logPlaceholder, text);
+    recordingLog.append(text);
   }
 
   if (message.type === "STATE_CHANGED") {

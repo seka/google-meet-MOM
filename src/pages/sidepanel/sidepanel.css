@@ -148,18 +148,8 @@ html[data-theme="dark"] body {
   transform: scale(0.93);
 }
 
-.log-area {
-  background: var(--surface);
-  border-color: var(--border);
-}
-
-.log-chunk {
-  background: #eef3f8;
-  border-left-color: var(--primary);
-}
-
 html[data-theme="dark"] .fab-sm:hover,
-html[data-theme="dark"] .log-chunk {
+html[data-theme="dark"] .fab-sm:hover {
   background: #242d36;
 }
 
@@ -180,8 +170,7 @@ html[data-theme="dark"] .log-chunk {
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
   }
 
-  html:not([data-theme]) .fab-sm:hover,
-  html:not([data-theme]) .log-chunk {
+  html:not([data-theme]) .fab-sm:hover {
     background: #242d36;
   }
 }
