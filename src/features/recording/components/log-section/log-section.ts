@@ -1,4 +1,4 @@
-import { createLogChunk } from "./log-item";
+import { createLogChunk } from "../log-item/log-item";
 
 export function appendChunk(logContent: HTMLElement, placeholder: HTMLElement, text: string): void {
   const trimmed = text.trim();

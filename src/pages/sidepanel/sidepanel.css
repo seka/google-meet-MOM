@@ -2,9 +2,9 @@
 @import "@core/components/atoms/button.css";
 @import "@core/components/atoms/badge.css";
 @import "@core/components/atoms/icon.css";
-@import "@core/components/organisms/log-section.css";
 @import "@core/components/organisms/result-section.css";
-@import "@features/recording/components/log-item.css";
+@import "@features/recording/components/log-section/log-section.css";
+@import "@features/recording/components/log-item/log-item.css";
 @import "@features/recording/components/recording-controls/recording-controls.css";
 
 * {

@@ -1,6 +1,6 @@
 import type { RecordingState } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
-import { appendChunk, resetLog } from "@features/recording/components/log-section";
+import { appendChunk, resetLog } from "@features/recording/components/log-section/log-section";
 import { initializeRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
 

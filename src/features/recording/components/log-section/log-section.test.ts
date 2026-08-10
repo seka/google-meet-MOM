@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vite-plus/test";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { appendChunk, resetLog } from "./log-section";
 
 describe("appendChunk", () => {
