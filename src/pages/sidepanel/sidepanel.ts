@@ -5,8 +5,6 @@ import { initializeRecordingControls } from "@features/recording/components/reco
 import { initializeRecordingResult } from "@features/recording/components/recording-result/recording-result";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
 
-const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
-
 let currentState: RecordingState = "idle";
 
 function toErrorMessage(err: unknown): string {
@@ -66,6 +64,7 @@ const recordingControls = initializeRecordingControls(() => {
 const recordingLog = initializeRecordingLog();
 const recordingResult = initializeRecordingResult((message) => updateUI("error", message));
 
+const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
 openOptions.addEventListener("click", (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage().catch((err: unknown) => {

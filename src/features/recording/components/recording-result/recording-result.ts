@@ -7,14 +7,9 @@ export interface RecordingResult {
 }
 
 export function initializeRecordingResult(onError: (message: string) => void): RecordingResult {
-  const resultSection = document.getElementById("result-section") as HTMLElement;
   const transcriptText = document.getElementById("transcript-text") as HTMLPreElement;
   const minutesText = document.getElementById("minutes-text") as HTMLPreElement;
-  const copyButton = document.getElementById("copy-btn") as HTMLButtonElement;
-  const downloadButton = document.getElementById("download-btn") as HTMLButtonElement;
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".tab"));
-  const transcriptTab = document.getElementById("transcript-tab") as HTMLElement;
-  const minutesTab = document.getElementById("minutes-tab") as HTMLElement;
   let currentTab: ResultTab = "transcript";
 
   function switchTab(tab: ResultTab): void {
@@ -22,6 +17,8 @@ export function initializeRecordingResult(onError: (message: string) => void): R
     tabs.forEach((element) => {
       element.classList.toggle("active", element.dataset.tab === tab);
     });
+    const transcriptTab = document.getElementById("transcript-tab") as HTMLElement;
+    const minutesTab = document.getElementById("minutes-tab") as HTMLElement;
     transcriptTab.hidden = tab !== "transcript";
     minutesTab.hidden = tab !== "minutes";
   }
@@ -38,6 +35,7 @@ export function initializeRecordingResult(onError: (message: string) => void): R
     });
   });
 
+  const copyButton = document.getElementById("copy-btn") as HTMLButtonElement;
   copyButton.addEventListener("click", () => {
     const text = currentText();
     if (!text) return;
@@ -47,6 +45,7 @@ export function initializeRecordingResult(onError: (message: string) => void): R
     });
   });
 
+  const downloadButton = document.getElementById("download-btn") as HTMLButtonElement;
   downloadButton.addEventListener("click", () => {
     const text = currentText();
     if (!text) return;
@@ -60,6 +59,7 @@ export function initializeRecordingResult(onError: (message: string) => void): R
     URL.revokeObjectURL(url);
   });
 
+  const resultSection = document.getElementById("result-section") as HTMLElement;
   return {
     reset: () => {
       resultSection.hidden = true;
