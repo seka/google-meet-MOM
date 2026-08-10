@@ -64,6 +64,29 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(47, 125, 50, 0.18);
 }
 
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  margin-left: 240px;
+}
+
+.save-row[hidden] {
+  display: none;
+}
+
+.save-row .btn-primary {
+  width: auto;
+  padding: 10px 24px;
+}
+
+#saved-msg {
+  font-size: 13px;
+  color: var(--options-primary);
+  display: none;
+}
+
 .btn-primary {
   background: var(--options-action);
   color: #fff;
@@ -82,4 +105,10 @@ select:focus {
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--options-surface-subtle);
+}
+
+@media (max-width: 720px) {
+  .save-row {
+    margin-left: 0;
+  }
 }

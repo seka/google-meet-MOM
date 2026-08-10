@@ -1,112 +1,25 @@
-import { DEFAULT_SETTINGS } from "../types";
-import {
-  applyAppearance,
-  normalizeAppearance,
-  subscribeAppearanceChanges,
-} from "../theme";
+import { DEFAULT_SETTINGS } from "../../types";
 
-export function showSettingsScreen(
-  navItems: HTMLButtonElement[],
-  screens: HTMLElement[],
-  saveRow: HTMLElement,
-  screenName: string,
-): void {
-  navItems.forEach((item) => {
-    item.classList.toggle("active", item.dataset.screenTarget === screenName);
-  });
-  screens.forEach((screen) => {
-    screen.classList.toggle("active", screen.dataset.screen === screenName);
-  });
-  saveRow.hidden = screenName === "about";
+interface RecordingSession {
+  audioCtx: AudioContext;
+  source: MediaStreamAudioSourceNode;
+  processor: ScriptProcessorNode;
+  stream: MediaStream;
+  chunks: Float32Array[];
+  startedAt: number;
 }
 
-export function initializeSettingsPage(): void {
+export function initializeConnectionTest(): void {
   const ollamaUrl = document.getElementById("ollama-url") as HTMLInputElement;
   const ollamaModel = document.getElementById("ollama-model") as HTMLInputElement;
-  const whisperModel = document.getElementById("whisper-model") as HTMLSelectElement;
-  const language = document.getElementById("language") as HTMLSelectElement;
-  const chunkInterval = document.getElementById("chunk-interval") as HTMLSelectElement;
-  const minutesOutputDestination = document.getElementById(
-    "minutes-output-destination",
-  ) as HTMLSelectElement;
-  const recordingOutputDestination = document.getElementById(
-    "recording-output-destination",
-  ) as HTMLSelectElement;
-  const appearance = document.getElementById("appearance") as HTMLSelectElement;
-  const saveRow = document.getElementById("save-row") as HTMLElement;
-  const saveBtn = document.getElementById("save-btn") as HTMLButtonElement;
-  const savedMsg = document.getElementById("saved-msg") as HTMLSpanElement;
   const ollamaTestBtn = document.getElementById("ollama-test-btn") as HTMLButtonElement;
   const ollamaTestStatus = document.getElementById("ollama-test-status") as HTMLSpanElement;
   const whisperTestBtn = document.getElementById("whisper-test-btn") as HTMLButtonElement;
   const whisperTestStatus = document.getElementById("whisper-test-status") as HTMLSpanElement;
   const whisperTestResult = document.getElementById("whisper-test-result") as HTMLDivElement;
   const whisperTestOutput = document.getElementById("whisper-test-output") as HTMLDivElement;
-  const appVersion = document.getElementById("app-version") as HTMLElement;
-  const navItems = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-screen-target]"));
-  const screens = Array.from(document.querySelectorAll<HTMLElement>("[data-screen]"));
-
-  interface RecordingSession {
-    audioCtx: AudioContext;
-    source: MediaStreamAudioSourceNode;
-    processor: ScriptProcessorNode;
-    stream: MediaStream;
-    chunks: Float32Array[];
-    startedAt: number;
-  }
-
   let recordingSession: RecordingSession | null = null;
   let recordingTimer: ReturnType<typeof setInterval> | null = null;
-
-  function toErrorMessage(err: unknown): string {
-    return err instanceof Error ? err.message : String(err);
-  }
-
-  async function load(): Promise<void> {
-    const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-    ollamaUrl.value = s["ollamaUrl"] as string;
-    ollamaModel.value = s["ollamaModel"] as string;
-    whisperModel.value = s["whisperModel"] as string;
-    language.value = s["language"] as string;
-    chunkInterval.value = String(s["chunkIntervalSec"]);
-    minutesOutputDestination.value = s["minutesOutputDestination"] as string;
-    recordingOutputDestination.value = s["recordingOutputDestination"] as string;
-    appearance.value = normalizeAppearance(s["appearance"]);
-    applyAppearance(normalizeAppearance(s["appearance"]));
-    appVersion.textContent = `${chrome.runtime.getManifest().version} (${__BUILD_ID__})`;
-  }
-
-  navItems.forEach((item) => {
-    item.addEventListener("click", () => {
-      showSettingsScreen(navItems, screens, saveRow, item.dataset.screenTarget ?? "general");
-    });
-  });
-
-  saveBtn.addEventListener("click", async () => {
-    const selectedAppearance = normalizeAppearance(appearance.value);
-
-    await chrome.storage.sync.set({
-      ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
-      ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
-      whisperModel: whisperModel.value,
-      language: language.value,
-      chunkIntervalSec: Number(chunkInterval.value),
-      minutesOutputDestination: minutesOutputDestination.value,
-      recordingOutputDestination: recordingOutputDestination.value,
-      appearance: selectedAppearance,
-    });
-
-    applyAppearance(selectedAppearance);
-    savedMsg.textContent = "保存しました";
-    savedMsg.style.display = "inline";
-    setTimeout(() => {
-      savedMsg.style.display = "none";
-    }, 2000);
-  });
-
-  appearance.addEventListener("change", () => {
-    applyAppearance(normalizeAppearance(appearance.value));
-  });
 
   ollamaTestBtn.addEventListener("click", () => {
     ollamaTestBtn.disabled = true;
@@ -122,11 +35,9 @@ export function initializeSettingsPage(): void {
         },
       },
       (result: { ok: boolean; error?: string } | null) => {
-        if (result?.ok) {
-          ollamaTestStatus.textContent = "接続できました";
-        } else {
-          ollamaTestStatus.textContent = `エラー: ${result?.error ?? "不明なエラー"}`;
-        }
+        ollamaTestStatus.textContent = result?.ok
+          ? "接続できました"
+          : `エラー: ${result?.error ?? "不明なエラー"}`;
         ollamaTestBtn.disabled = false;
       },
     );
@@ -171,7 +82,7 @@ export function initializeSettingsPage(): void {
 
     processor.disconnect();
     source.disconnect();
-    stream.getTracks().forEach((t) => t.stop());
+    stream.getTracks().forEach((track) => track.stop());
 
     const inputLength = chunks.reduce((total, chunk) => total + chunk.length, 0);
     if (inputLength === 0) {
@@ -227,8 +138,7 @@ export function initializeSettingsPage(): void {
 
     try {
       const audioSamples = await stopRecordingTest();
-
-      const s = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+      const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
       chrome.runtime.sendMessage(
         {
@@ -236,8 +146,8 @@ export function initializeSettingsPage(): void {
           target: "background",
           payload: {
             audioSamples: Array.from(audioSamples),
-            model: s["whisperModel"],
-            language: s["language"],
+            model: settings["whisperModel"],
+            language: settings["language"],
           },
         },
         (result: { ok: boolean; transcript?: string; error?: string } | null) => {
@@ -265,11 +175,5 @@ export function initializeSettingsPage(): void {
       const { progress } = message.payload as { progress: number };
       whisperTestStatus.textContent = `モデルをダウンロード中... ${Math.round(progress)}%`;
     }
-  });
-
-  subscribeAppearanceChanges();
-  load().catch((err: unknown) => {
-    savedMsg.textContent = `設定を読み込めませんでした: ${toErrorMessage(err)}`;
-    savedMsg.style.display = "inline";
   });
 }

@@ -1,3 +1,3 @@
-import { initializeSettingsPage } from "@features/theme-settings/components/settings-page";
+import { initializeSettingsPage } from "@features/theme-settings/components/settings-page/settings-page";
 
 initializeSettingsPage();

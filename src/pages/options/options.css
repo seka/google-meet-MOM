@@ -1,4 +1,8 @@
 @import "@core/components/styles/tokens.css";
 @import "@core/components/atoms/button.css";
 @import "@core/components/atoms/icon.css";
-@import "@features/theme-settings/components/settings-page.css";
+@import "@features/theme-settings/components/settings-page/settings-page.css";
+@import "@features/theme-settings/components/settings-navigation/settings-navigation.css";
+@import "@features/theme-settings/components/settings-form/settings-form.css";
+@import "@features/theme-settings/components/connection-test/connection-test.css";
+@import "@features/theme-settings/components/about-section/about-section.css";

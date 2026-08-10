@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { showSettingsScreen } from "./settings-page";
+import { showSettingsScreen } from "./settings-navigation";
 
 describe("showSettingsScreen", () => {
   let generalNav: HTMLButtonElement;
