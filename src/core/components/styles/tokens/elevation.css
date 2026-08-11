@@ -1,0 +1,17 @@
+:root,
+html[data-theme="light"] {
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme="dark"] {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.26);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.26);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
+  }
+}
