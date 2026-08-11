@@ -1,7 +1,7 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { updateRecording } from "../db";
-import type { ExtensionMessage } from "../messages";
+import type { ExtensionMessage } from "../core/messaging/messages";
 import {
   assertMinutesModelAvailable,
   generateMinutes,

@@ -1,5 +1,5 @@
 import { saveRecording, updateRecording } from "../../db";
-import type { ExtensionMessage } from "../../messages";
+import type { ExtensionMessage } from "../../core/messaging/messages";
 import type { SpeakerEvent } from "@features/recording/types";
 import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
 import {
