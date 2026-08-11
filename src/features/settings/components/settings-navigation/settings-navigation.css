@@ -1,0 +1,49 @@
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 16px;
+}
+
+.nav-item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  color: var(--options-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  color: var(--options-text);
+  background: var(--options-surface-subtle);
+  border-color: var(--options-border);
+}
+
+.nav-item.active {
+  color: var(--options-primary);
+  background: var(--options-surface);
+  border-color: var(--options-border-strong);
+  box-shadow: inset 3px 0 0 var(--options-primary);
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .settings-nav {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

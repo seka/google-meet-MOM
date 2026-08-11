@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type Appearance } from "@features/theme-settings/types";
+import { DEFAULT_SETTINGS, type Appearance } from "./types";
 
 const APPEARANCES = new Set<Appearance>(["system", "light", "dark"]);
 
