@@ -11,6 +11,7 @@ html[data-theme="light"] {
   --danger-border: #f1b8b8;
   --surface: #ffffff;
   --surface-subtle: #eef3f8;
+  --status-neutral-surface: #e8eef5;
   --bg: #f6f8fb;
   --border: #d6dee8;
   --border-strong: #b8c4d2;
@@ -33,6 +34,7 @@ html[data-theme="dark"] {
   --danger-border: #7f3c42;
   --surface: #1b2229;
   --surface-subtle: #242d36;
+  --status-neutral-surface: #2a3440;
   --bg: #101418;
   --border: #34404c;
   --border-strong: #4a5866;
@@ -56,6 +58,7 @@ html[data-theme="dark"] {
     --danger-border: #7f3c42;
     --surface: #1b2229;
     --surface-subtle: #242d36;
+    --status-neutral-surface: #2a3440;
     --bg: #101418;
     --border: #34404c;
     --border-strong: #4a5866;

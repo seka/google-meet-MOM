@@ -1,26 +1,16 @@
 .log-chunk {
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  padding: 10px var(--space-3);
+  margin-bottom: var(--space-2);
   border-left: 3px solid var(--primary);
-  background: #eef3f8;
+  background: var(--surface-subtle);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 13px;
+  font-size: var(--font-size-md);
   line-height: 1.6;
   color: var(--text);
 }
 
 .log-chunk:last-child {
   margin-bottom: 0;
-}
-
-html[data-theme="dark"] .log-chunk {
-  background: #242d36;
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme]) .log-chunk {
-    background: #242d36;
-  }
 }

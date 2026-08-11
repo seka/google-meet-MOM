@@ -3,11 +3,11 @@
 }
 
 #status-message {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--danger);
   text-align: center;
-  background: #fff1f1;
-  border: 1px solid #f1b8b8;
+  background: var(--danger-surface);
+  border: 1px solid var(--danger-border);
   border-radius: var(--radius-md);
   padding: 8px 10px;
 }
@@ -19,7 +19,7 @@
 
 .badge-idle,
 .badge-done {
-  background: #e8eef5;
+  background: var(--status-neutral-surface);
   color: var(--primary);
 }
 
@@ -28,47 +28,9 @@
 }
 
 .btn-primary {
-  background: #2f7d32;
+  background: var(--action);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #256a28;
-}
-
-html[data-theme="dark"] #status-message {
-  background: #341f22;
-  border-color: #7f3c42;
-}
-
-html[data-theme="dark"] .badge-idle,
-html[data-theme="dark"] .badge-done {
-  background: #2a3440;
-}
-
-html[data-theme="dark"] .btn-primary {
-  background: #2f7d32;
-}
-
-html[data-theme="dark"] .btn-primary:hover:not(:disabled) {
-  background: #3d9442;
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme]) #status-message {
-    background: #341f22;
-    border-color: #7f3c42;
-  }
-
-  html:not([data-theme]) .badge-idle,
-  html:not([data-theme]) .badge-done {
-    background: #2a3440;
-  }
-
-  html:not([data-theme]) .btn-primary {
-    background: #2f7d32;
-  }
-
-  html:not([data-theme]) .btn-primary:hover:not(:disabled) {
-    background: #3d9442;
-  }
+  background: var(--action-hover);
 }

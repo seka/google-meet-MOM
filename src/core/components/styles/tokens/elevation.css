@@ -2,16 +2,27 @@
 html[data-theme="light"] {
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.16);
+  --shadow-fab: 0 8px 20px rgba(15, 23, 42, 0.2), 0 2px 6px rgba(15, 23, 42, 0.12);
+  --shadow-fab-hover: 0 12px 28px rgba(15, 23, 42, 0.24),
+    0 4px 10px rgba(15, 23, 42, 0.14);
+  --shadow-fab-pressed: 0 4px 12px rgba(15, 23, 42, 0.18),
+    0 1px 3px rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme="dark"] {
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.26);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-fab: 0 8px 20px rgba(0, 0, 0, 0.34), 0 2px 6px rgba(0, 0, 0, 0.26);
+  --shadow-fab-hover: 0 12px 28px rgba(0, 0, 0, 0.4), 0 4px 10px rgba(0, 0, 0, 0.3);
+  --shadow-fab-pressed: 0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.24);
 }
 
 @media (prefers-color-scheme: dark) {
   html:not([data-theme]) {
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.26);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
+    --shadow-fab: 0 8px 20px rgba(0, 0, 0, 0.34), 0 2px 6px rgba(0, 0, 0, 0.26);
+    --shadow-fab-hover: 0 12px 28px rgba(0, 0, 0, 0.4), 0 4px 10px rgba(0, 0, 0, 0.3);
+    --shadow-fab-pressed: 0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.24);
   }
 }
