@@ -1,8 +1,9 @@
 import { DEFAULT_SETTINGS } from "../../types";
 import {
-  addRuntimeMessageListener,
-  sendRuntimeMessage,
-} from "@data/chrome-runtime";
+  testOllamaConnection,
+  testWhisperConnection,
+} from "@data/api/connection-test-runtime";
+import { subscribeTranscriptionEvents } from "@data/api/transcription-runtime";
 
 interface RecordingSession {
   audioCtx: AudioContext;
@@ -30,13 +31,9 @@ export function initializeConnectionTest(): void {
     ollamaTestStatus.textContent = "確認中...";
 
     try {
-      const result = await sendRuntimeMessage<{ ok: boolean; error?: string } | null>({
-        type: "OLLAMA_TEST",
-        target: "background",
-        payload: {
-          ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
-          ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
-        },
+      const result = await testOllamaConnection({
+        ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
+        ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
       });
       ollamaTestStatus.textContent = result?.ok
         ? "接続できました"
@@ -144,18 +141,10 @@ export function initializeConnectionTest(): void {
       const audioSamples = await stopRecordingTest();
       const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
-      const result = await sendRuntimeMessage<{
-        ok: boolean;
-        transcript?: string;
-        error?: string;
-      } | null>({
-        type: "WHISPER_TEST",
-        target: "background",
-        payload: {
-          audioSamples: Array.from(audioSamples),
-          model: settings["whisperModel"],
-          language: settings["language"],
-        },
+      const result = await testWhisperConnection({
+        audioSamples: Array.from(audioSamples),
+        model: settings["whisperModel"],
+        language: settings["language"],
       });
       if (result?.ok) {
         whisperTestOutput.textContent =
@@ -174,10 +163,9 @@ export function initializeConnectionTest(): void {
     }
   });
 
-  addRuntimeMessageListener((message) => {
-    if (message.type === "TRANSCRIPTION_PROGRESS") {
-      const { progress } = message.payload as { progress: number };
+  subscribeTranscriptionEvents({
+    progress(progress) {
       whisperTestStatus.textContent = `モデルをダウンロード中... ${Math.round(progress)}%`;
-    }
+    },
   });
 }

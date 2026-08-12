@@ -2,11 +2,21 @@ import type { RecordingState, SpeakerEvent } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { updateRecording } from "../db";
 import {
-  addRuntimeMessageListener,
-  postRuntimeMessage,
-  sendRuntimeMessage,
-  type ExtensionMessage,
-} from "@data/chrome-runtime";
+  publishRecordingState,
+  startOffscreenRecording,
+  stopOffscreenRecording,
+  subscribeBackgroundRecordingCommands,
+  type RecordingStateEvent,
+} from "@data/api/recording-runtime";
+import {
+  broadcastTranscriptChunk,
+  subscribeBackgroundTranscriptionEvents,
+} from "@data/api/transcription-runtime";
+import {
+  subscribeBackgroundConnectionTests,
+  testWhisperOffscreen,
+} from "@data/api/connection-test-runtime";
+import { subscribeRuntimeUrlDownloads } from "@data/api/file-runtime";
 import {
   assertMinutesModelAvailable,
   generateMinutes,
@@ -76,12 +86,16 @@ async function closeOffscreenDocument(): Promise<void> {
   await chrome.offscreen.closeDocument();
 }
 
-async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknown> {
+async function testWhisperWithRetry(input: {
+  audioSamples: number[];
+  model: string;
+  language: string;
+}): Promise<unknown> {
   const attempts = 3;
 
   for (let i = 0; i < attempts; i++) {
     try {
-      return await sendRuntimeMessage(message);
+      return await testWhisperOffscreen(input);
     } catch (err) {
       if (i === attempts - 1) throw err;
       await new Promise<void>((resolve) => setTimeout(resolve, 200));
@@ -91,12 +105,12 @@ async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknow
   throw new Error("Offscreen document did not respond");
 }
 
-function setState(state: RecordingState, extra: Record<string, unknown> = {}): void {
+function setState(
+  state: RecordingState,
+  extra: Omit<RecordingStateEvent, "state"> = {},
+): void {
   currentState = state;
-  postRuntimeMessage({
-    type: "STATE_CHANGED",
-    payload: { state, ...extra },
-  });
+  publishRecordingState({ state, ...extra });
 }
 
 async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
@@ -172,141 +186,92 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
   }
 }
 
-addRuntimeMessageListener(
-  (
-    message: ExtensionMessage,
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: unknown) => void,
-  ) => {
-    if (message.target === "offscreen") return false;
-
+subscribeBackgroundRecordingCommands({
+  start(input, respond) {
     (async () => {
-      switch (message.type) {
-        case "START_RECORDING": {
-          try {
-            await ensureOffscreenDocument();
+      try {
+        await ensureOffscreenDocument();
+        recordingStartTime = Date.now();
+        meetTabId = input.tabId;
+        currentMeetingTitle = input.meetingTitle;
+        const streamId = await getTabMediaStreamId(input.tabId);
 
-            recordingStartTime = Date.now();
-            meetTabId = message.payload.tabId ?? null;
-            currentMeetingTitle = message.payload.meetingTitle;
-
-            const streamId = await getTabMediaStreamId(message.payload.tabId);
-
-            // content script に話者追跡を開始させる
-            if (meetTabId) {
-              chrome.tabs.sendMessage(
-                meetTabId,
-                { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
-                () => {},
-              );
-            }
-
-            postRuntimeMessage({
-              type: "FORWARD_TO_OFFSCREEN",
-              target: "offscreen",
-              payload: { ...message.payload, streamId, recordingStartTime },
-            });
-            setState("recording");
-            sendResponse({ ok: true });
-          } catch (err) {
-            const msg = toRecordingStartErrorMessage(err);
-            setState("error", { message: msg });
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
+        if (meetTabId) {
+          chrome.tabs.sendMessage(
+            meetTabId,
+            { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
+            () => {},
+          );
         }
 
-        case "STOP_RECORDING": {
-          setState("transcribing");
-          sendResponse({ ok: true });
-
-          // content から話者イベントを収集してから offscreen に渡す
-          const speakerEvents = await collectSpeakerEvents();
-          postRuntimeMessage({
-            type: "OFFSCREEN_STOP",
-            target: "offscreen",
-            payload: { speakerEvents, recordingStartTime },
-          });
-          break;
-        }
-
-        case "GET_STATE": {
-          sendResponse({ state: currentState, recordingId: currentRecordingId });
-          break;
-        }
-
-        case "RECORDING_SAVED": {
-          currentRecordingId = message.payload.recordingId;
-          break;
-        }
-
-        case "TRANSCRIPTION_DONE": {
-          const { transcript, recordingId } = message.payload;
-          currentRecordingId = recordingId;
-          await generateAndSaveMinutes(transcript, recordingId);
-          await closeOffscreenDocument();
-          break;
-        }
-
-        case "TRANSCRIPT_CHUNK": {
-          // サイドパネルへ中継（target なしで全拡張ページにブロードキャスト）
-          postRuntimeMessage({ type: "TRANSCRIPT_CHUNK", payload: message.payload });
-          break;
-        }
-
-        case "ERROR": {
-          setState("error", { message: message.payload.message });
-          await closeOffscreenDocument();
-          break;
-        }
-
-        case "WHISPER_TEST": {
-          if (currentState !== "idle" && currentState !== "done" && currentState !== "error") {
-            sendResponse({ ok: false, error: "録音中はテストできません" });
-            break;
-          }
-          try {
-            await ensureOffscreenDocument();
-            const result = await sendMessageToOffscreen({
-              type: "WHISPER_TEST",
-              target: "offscreen",
-              payload: message.payload,
-            });
-            sendResponse(result);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            sendResponse({ ok: false, error: `Offscreen 通信エラー: ${msg}` });
-          }
-          break;
-        }
-
-        case "OLLAMA_TEST": {
-          try {
-            await assertMinutesModelAvailable(
-              message.payload.ollamaUrl,
-              message.payload.ollamaModel,
-            );
-            sendResponse({ ok: true });
-          } catch (err) {
-            const msg = toMinutesErrorMessage(err);
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
-        }
-
-        case "DOWNLOAD_URL": {
-          try {
-            await downloadUrlFile(message.payload.url, message.payload.filename);
-            sendResponse({ ok: true });
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
-        }
+        startOffscreenRecording({ ...input, streamId, recordingStartTime });
+        setState("recording");
+        respond({ ok: true });
+      } catch (err) {
+        const message = toRecordingStartErrorMessage(err);
+        setState("error", { message });
+        respond({ ok: false, error: message });
       }
     })().catch(reportBackgroundError);
-
-    return true;
   },
-);
+  stop(respond) {
+    setState("transcribing");
+    respond({ ok: true });
+    collectSpeakerEvents()
+      .then((speakerEvents) => stopOffscreenRecording({ speakerEvents, recordingStartTime }))
+      .catch(reportBackgroundError);
+  },
+  getState(respond) {
+    respond({ state: currentState, recordingId: currentRecordingId });
+  },
+  recordingSaved(recordingId) {
+    currentRecordingId = recordingId;
+  },
+});
+
+subscribeBackgroundTranscriptionEvents({
+  completed(transcript, recordingId) {
+    currentRecordingId = recordingId;
+    generateAndSaveMinutes(transcript, recordingId)
+      .then(closeOffscreenDocument)
+      .catch(reportBackgroundError);
+  },
+  chunk(text, chunkIndex) {
+    broadcastTranscriptChunk(text, chunkIndex);
+  },
+  error(message) {
+    setState("error", { message });
+    closeOffscreenDocument().catch(reportBackgroundError);
+  },
+});
+
+subscribeBackgroundConnectionTests({
+  ollama({ ollamaUrl, ollamaModel }, respond) {
+    assertMinutesModelAvailable(ollamaUrl, ollamaModel)
+      .then(() => respond({ ok: true }))
+      .catch((err: unknown) => respond({ ok: false, error: toMinutesErrorMessage(err) }));
+  },
+  whisper(input, respond) {
+    if (currentState !== "idle" && currentState !== "done" && currentState !== "error") {
+      respond({ ok: false, error: "録音中はテストできません" });
+      return;
+    }
+
+    ensureOffscreenDocument()
+      .then(() => testWhisperWithRetry(input))
+      .then(respond)
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        respond({ ok: false, error: `Offscreen 通信エラー: ${message}` });
+      });
+  },
+});
+
+subscribeRuntimeUrlDownloads((url, filename, respond) => {
+  downloadUrlFile(url, filename)
+    .then(() => respond({ ok: true }))
+    .catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      respond({ ok: false, error: message });
+    });
+});

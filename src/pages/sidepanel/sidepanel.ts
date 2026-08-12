@@ -3,10 +3,12 @@ import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
 import {
-  addRuntimeMessageListener,
-  postRuntimeMessage,
-  sendRuntimeMessage,
-} from "@data/chrome-runtime";
+  getRecordingState,
+  startRecording,
+  stopRecording,
+  subscribeRecordingStateChanged,
+} from "@data/api/recording-runtime";
+import { subscribeTranscriptionEvents } from "@data/api/transcription-runtime";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
@@ -88,7 +90,7 @@ document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
 
 recordBtn.addEventListener("click", async () => {
   if (currentState === "recording") {
-    postRuntimeMessage({ type: "STOP_RECORDING", target: "background" });
+    stopRecording();
     return;
   }
 
@@ -120,11 +122,7 @@ recordBtn.addEventListener("click", async () => {
 
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
-  postRuntimeMessage({
-    type: "START_RECORDING",
-    target: "background",
-    payload: { meetingTitle, settings, tabId: meetTab.id },
-  });
+  startRecording({ meetingTitle, settings, tabId: meetTab.id });
 });
 
 copyBtn.addEventListener("click", () => {
@@ -156,41 +154,28 @@ openOptions.addEventListener("click", (e) => {
   });
 });
 
-addRuntimeMessageListener((message) => {
-  if (message.type === "TRANSCRIPT_CHUNK") {
-    const { text } = message.payload as { text: string; chunkIndex: number };
+subscribeTranscriptionEvents({
+  chunk(text) {
     appendChunk(logContent, logPlaceholder, text);
-  }
-
-  if (message.type === "STATE_CHANGED") {
-    const {
-      state,
-      minutes,
-      message: msg,
-    } = message.payload as {
-      state: RecordingState;
-      minutes?: string;
-      message?: string;
-    };
-
-    updateUI(state, msg ?? "");
-
-    if (state === "done" && minutes) {
-      minutesText.textContent = minutes;
-      resultSection.hidden = false;
-      if (!transcriptText.textContent) switchTab("minutes");
-    }
-  }
-
-  if (message.type === "TRANSCRIPTION_DONE") {
-    const { transcript } = (message as { payload: { transcript: string } }).payload;
+  },
+  completed(transcript) {
     transcriptText.textContent = transcript;
     resultSection.hidden = false;
     switchTab("transcript");
+  },
+});
+
+subscribeRecordingStateChanged(({ state, minutes, message }) => {
+  updateUI(state, message ?? "");
+
+  if (state === "done" && minutes) {
+    minutesText.textContent = minutes;
+    resultSection.hidden = false;
+    if (!transcriptText.textContent) switchTab("minutes");
   }
 });
 
-sendRuntimeMessage<{ state: RecordingState } | null>({ type: "GET_STATE" })
+getRecordingState()
   .then((response) => {
     if (response) updateUI(response.state);
   })

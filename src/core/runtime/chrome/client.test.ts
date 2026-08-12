@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
-  addRuntimeMessageListener,
-  postRuntimeMessage,
-  sendRuntimeMessage,
-  type RuntimeMessageListener,
+  notifyChromeRuntime,
+  requestChromeRuntime,
+  subscribeChromeRuntime,
+  type ChromeRuntimeListener,
 } from "./client";
 
 beforeEach(() => {
@@ -11,20 +11,18 @@ beforeEach(() => {
   (chrome.runtime as unknown as Record<string, unknown>).lastError = undefined;
 });
 
-describe("sendRuntimeMessage", () => {
+describe("requestChromeRuntime", () => {
   it("Chrome Runtime のレスポンスを返す", async () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      (_message: unknown, callback: (response: unknown) => void) => {
-        callback({ ok: true });
-      },
+      (_payload: unknown, callback: (response: unknown) => void) => callback({ ok: true }),
     );
 
-    await expect(sendRuntimeMessage({ type: "GET_STATE" })).resolves.toEqual({ ok: true });
+    await expect(requestChromeRuntime({ type: "TEST" })).resolves.toEqual({ ok: true });
   });
 
   it("runtime.lastError を Error に変換する", async () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      (_message: unknown, callback: (response: unknown) => void) => {
+      (_payload: unknown, callback: (response: unknown) => void) => {
         (chrome.runtime as unknown as Record<string, unknown>).lastError = {
           message: "受信先がありません",
         };
@@ -33,32 +31,30 @@ describe("sendRuntimeMessage", () => {
       },
     );
 
-    await expect(sendRuntimeMessage({ type: "GET_STATE" })).rejects.toThrow(
-      "受信先がありません",
-    );
+    await expect(requestChromeRuntime({ type: "TEST" })).rejects.toThrow("受信先がありません");
   });
 });
 
-describe("postRuntimeMessage", () => {
-  it("応答を待たずにメッセージを送信する", () => {
+describe("notifyChromeRuntime", () => {
+  it("応答を待たずに payload を送信する", () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      (_message: unknown, callback: () => void) => callback(),
+      (_payload: unknown, callback: () => void) => callback(),
     );
 
-    postRuntimeMessage({ type: "GET_STATE" });
+    notifyChromeRuntime({ type: "TEST" });
 
     expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-      { type: "GET_STATE" },
+      { type: "TEST" },
       expect.any(Function),
     );
   });
 });
 
-describe("addRuntimeMessageListener", () => {
+describe("subscribeChromeRuntime", () => {
   it("listener を Chrome Runtime に登録する", () => {
-    const listener: RuntimeMessageListener = vi.fn();
+    const listener: ChromeRuntimeListener = vi.fn();
 
-    addRuntimeMessageListener(listener);
+    subscribeChromeRuntime(listener);
 
     expect(chrome.runtime.onMessage.addListener).toHaveBeenCalledWith(listener);
   });
