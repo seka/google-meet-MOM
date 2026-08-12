@@ -1,0 +1,31 @@
+:root {
+  --primitive-color-white: #ffffff;
+  --primitive-color-green-800: #256a28;
+  --primitive-color-green-700: #2f7d32;
+  --primitive-color-green-600: #3d9442;
+  --primitive-color-green-300: #8bcf8e;
+  --primitive-color-green-200: #a4dca6;
+  --primitive-color-red-800: #b73535;
+  --primitive-color-red-700: #d14343;
+  --primitive-color-red-500: #ef6b6b;
+  --primitive-color-red-400: #f08282;
+  --primitive-color-red-200: #f1b8b8;
+  --primitive-color-red-50: #fff1f1;
+  --primitive-color-red-950: #341f22;
+  --primitive-color-red-800-muted: #7f3c42;
+  --primitive-color-slate-950: #101418;
+  --primitive-color-slate-900: #172033;
+  --primitive-color-slate-850: #1b2229;
+  --primitive-color-slate-800: #242d36;
+  --primitive-color-slate-700: #34404c;
+  --primitive-color-slate-600: #4a5866;
+  --primitive-color-slate-500: #566273;
+  --primitive-color-slate-400: #a8b3c1;
+  --primitive-color-slate-300: #b8c4d2;
+  --primitive-color-slate-200: #d6dee8;
+  --primitive-color-slate-100: #edf2f7;
+  --primitive-color-slate-75: #eef3f8;
+  --primitive-color-slate-50: #f6f8fb;
+  --primitive-color-green-700-alpha-18: rgba(47, 125, 50, 0.18);
+  --primitive-color-green-300-alpha-20: rgba(139, 207, 142, 0.2);
+}

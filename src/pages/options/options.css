@@ -1,4 +1,4 @@
-@import "@core/components/styles/tokens.css";
+@import "@core/styles/index.css";
 @import "@core/components/atoms/button.css";
 @import "@core/components/atoms/icon.css";
 @import "@features/settings/components/settings-navigation/settings-navigation.css";

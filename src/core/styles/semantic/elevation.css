@@ -1,0 +1,17 @@
+:root,
+html[data-theme="light"] {
+  --shadow-sm: var(--primitive-shadow-light-sm);
+  --shadow-md: var(--primitive-shadow-light-md);
+}
+
+html[data-theme="dark"] {
+  --shadow-sm: var(--primitive-shadow-dark-sm);
+  --shadow-md: var(--primitive-shadow-dark-md);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --shadow-sm: var(--primitive-shadow-dark-sm);
+    --shadow-md: var(--primitive-shadow-dark-md);
+  }
+}

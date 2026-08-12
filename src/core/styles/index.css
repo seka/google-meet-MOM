@@ -1,0 +1,7 @@
+@import "./primitive/color.css";
+@import "./primitive/space.css";
+@import "./primitive/typography.css";
+@import "./primitive/radius.css";
+@import "./primitive/shadow.css";
+@import "./semantic/color.css";
+@import "./semantic/elevation.css";
