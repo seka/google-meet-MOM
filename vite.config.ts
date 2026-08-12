@@ -46,7 +46,7 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2020",
     minify: false,
-    // Extension の異なる実行 world 間では preload を共有できず、Chrome が警告するため無効化する。
+    // Chrome Extension では生成された modulepreload が再利用されず警告になるため無効化する。
     modulePreload: false,
     rollupOptions: {
       input: {
