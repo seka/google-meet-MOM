@@ -5,4 +5,8 @@
   --font-size-base: 14px;
   --font-size-lg: 18px;
   --font-size-xl: 20px;
+  --line-height-none: 1;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.7;
 }

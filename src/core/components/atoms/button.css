@@ -2,14 +2,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 20px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   font-weight: 500;
-  line-height: 1;
+  line-height: var(--line-height-none);
   transition:
     background 0.15s,
     box-shadow 0.15s;
@@ -22,9 +22,9 @@
 
 .btn-primary {
   background: var(--primary);
-  color: #fff;
-  padding: 12px 20px;
-  font-size: 15px;
+  color: var(--on-action);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--font-size-base);
   box-shadow: var(--shadow-sm);
 }
 

@@ -4,19 +4,19 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0 8px;
+  padding: var(--space-3) 0 var(--space-2);
   flex-shrink: 0;
 }
 
 .section-title {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -29,16 +29,16 @@
   background: var(--surface-neutral);
   border: 1px solid var(--border-neutral);
   border-radius: var(--radius-lg);
-  padding: 12px;
-  font-size: 13px;
-  line-height: 1.6;
+  padding: var(--space-3);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-relaxed);
   color: var(--text);
   box-shadow: var(--shadow-sm);
 }
 
 .log-area .placeholder {
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-md);
   text-align: center;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }

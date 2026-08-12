@@ -6,20 +6,20 @@
 
 .about-text {
   color: var(--text-muted);
-  line-height: 1.7;
-  margin-bottom: 18px;
+  line-height: var(--line-height-loose);
+  margin-bottom: var(--space-4);
 }
 
 .about-list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .about-list div {
   display: grid;
   grid-template-columns: 120px 1fr;
   gap: var(--space-3);
-  padding-top: 10px;
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border);
 }
 
