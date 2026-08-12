@@ -49,6 +49,34 @@ const TAB_CAPTURE_PERMISSION_ERROR =
   "録音対象タブをキャプチャできません。Google Meet のタブを選択した状態で拡張機能アイコンからサイドパネルを開き直して、もう一度開始してください。chrome:// などの Chrome 内部ページは録音できません。";
 
 describe("START_RECORDING", () => {
+  it("offscreen document の作成完了を待たずにタブキャプチャを開始する", async () => {
+    let resolveOffscreen!: () => void;
+    (chrome.offscreen.createDocument as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveOffscreen = resolve;
+      }),
+    );
+    (chrome.tabCapture.getMediaStreamId as ReturnType<typeof vi.fn>).mockImplementation(
+      (_opts: unknown, cb: (id: string) => void) => cb("stream-gesture"),
+    );
+
+    const sendResponse = vi.fn();
+    bgHandler(
+      { type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD },
+      {} as chrome.runtime.MessageSender,
+      sendResponse,
+    );
+
+    expect(chrome.tabCapture.getMediaStreamId).toHaveBeenCalledWith(
+      { targetTabId: 42 },
+      expect.any(Function),
+    );
+    expect(sendResponse).not.toHaveBeenCalled();
+
+    resolveOffscreen();
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ ok: true }));
+  });
+
   it("getMediaStreamId をバックグラウンドから targetTabId 付きで呼ぶ", async () => {
     (chrome.tabCapture.getMediaStreamId as ReturnType<typeof vi.fn>).mockImplementation(
       (_opts: unknown, cb: (id: string) => void) => cb("stream-abc"),

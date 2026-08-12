@@ -190,13 +190,13 @@ chrome.runtime.onMessage.addListener(
       switch (message.type) {
         case "START_RECORDING": {
           try {
-            await ensureOffscreenDocument();
+            // tabCapture はユーザー操作の直後に同期的に開始する必要がある。
+            const streamIdPromise = getTabMediaStreamId(message.payload.tabId);
+            const [streamId] = await Promise.all([streamIdPromise, ensureOffscreenDocument()]);
 
             recordingStartTime = Date.now();
             meetTabId = message.payload.tabId ?? null;
             currentMeetingTitle = message.payload.meetingTitle;
-
-            const streamId = await getTabMediaStreamId(message.payload.tabId);
 
             // content script に話者追跡を開始させる
             if (meetTabId) {
