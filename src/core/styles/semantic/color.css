@@ -1,0 +1,71 @@
+:root,
+html[data-theme="light"] {
+  --primary: var(--primitive-color-green-700);
+  --primary-hover: var(--primitive-color-green-800);
+  --action: var(--primitive-color-green-700);
+  --action-hover: var(--primitive-color-green-800);
+  --on-action: var(--primitive-color-white);
+  --danger: var(--primitive-color-red-700);
+  --danger-hover: var(--primitive-color-red-800);
+  --danger-surface: var(--primitive-color-red-50);
+  --danger-border: var(--primitive-color-red-200);
+  --surface: var(--primitive-color-white);
+  --surface-subtle: var(--primitive-color-slate-75);
+  --status-neutral-surface: var(--primitive-color-slate-70);
+  --bg: var(--primitive-color-slate-50);
+  --border: var(--primitive-color-slate-200);
+  --border-strong: var(--primitive-color-slate-300);
+  --text: var(--primitive-color-slate-900);
+  --text-muted: var(--primitive-color-slate-500);
+  --surface-neutral: var(--primitive-color-white);
+  --border-neutral: var(--primitive-color-slate-200);
+  --focus-ring: var(--primitive-color-green-700-alpha-18);
+}
+
+html[data-theme="dark"] {
+  --primary: var(--primitive-color-green-300);
+  --primary-hover: var(--primitive-color-green-200);
+  --action: var(--primitive-color-green-700);
+  --action-hover: var(--primitive-color-green-600);
+  --on-action: var(--primitive-color-white);
+  --danger: var(--primitive-color-red-500);
+  --danger-hover: var(--primitive-color-red-400);
+  --danger-surface: var(--primitive-color-red-950);
+  --danger-border: var(--primitive-color-red-800-muted);
+  --surface: var(--primitive-color-slate-850);
+  --surface-subtle: var(--primitive-color-slate-800);
+  --status-neutral-surface: var(--primitive-color-slate-750);
+  --bg: var(--primitive-color-slate-950);
+  --border: var(--primitive-color-slate-700);
+  --border-strong: var(--primitive-color-slate-600);
+  --text: var(--primitive-color-slate-100);
+  --text-muted: var(--primitive-color-slate-400);
+  --surface-neutral: var(--primitive-color-slate-850);
+  --border-neutral: var(--primitive-color-slate-700);
+  --focus-ring: var(--primitive-color-green-300-alpha-20);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --primary: var(--primitive-color-green-300);
+    --primary-hover: var(--primitive-color-green-200);
+    --action: var(--primitive-color-green-700);
+    --action-hover: var(--primitive-color-green-600);
+    --on-action: var(--primitive-color-white);
+    --danger: var(--primitive-color-red-500);
+    --danger-hover: var(--primitive-color-red-400);
+    --danger-surface: var(--primitive-color-red-950);
+    --danger-border: var(--primitive-color-red-800-muted);
+    --surface: var(--primitive-color-slate-850);
+    --surface-subtle: var(--primitive-color-slate-800);
+    --status-neutral-surface: var(--primitive-color-slate-750);
+    --bg: var(--primitive-color-slate-950);
+    --border: var(--primitive-color-slate-700);
+    --border-strong: var(--primitive-color-slate-600);
+    --text: var(--primitive-color-slate-100);
+    --text-muted: var(--primitive-color-slate-400);
+    --surface-neutral: var(--primitive-color-slate-850);
+    --border-neutral: var(--primitive-color-slate-700);
+    --focus-ring: var(--primitive-color-green-300-alpha-20);
+  }
+}

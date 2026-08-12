@@ -1,0 +1,26 @@
+:root,
+html[data-theme="light"] {
+  --shadow-sm: var(--primitive-shadow-light-sm);
+  --shadow-md: var(--primitive-shadow-light-md);
+  --shadow-fab: var(--primitive-shadow-light-fab);
+  --shadow-fab-hover: var(--primitive-shadow-light-fab-hover);
+  --shadow-fab-pressed: var(--primitive-shadow-light-fab-pressed);
+}
+
+html[data-theme="dark"] {
+  --shadow-sm: var(--primitive-shadow-dark-sm);
+  --shadow-md: var(--primitive-shadow-dark-md);
+  --shadow-fab: var(--primitive-shadow-dark-fab);
+  --shadow-fab-hover: var(--primitive-shadow-dark-fab-hover);
+  --shadow-fab-pressed: var(--primitive-shadow-dark-fab-pressed);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    --shadow-sm: var(--primitive-shadow-dark-sm);
+    --shadow-md: var(--primitive-shadow-dark-md);
+    --shadow-fab: var(--primitive-shadow-dark-fab);
+    --shadow-fab-hover: var(--primitive-shadow-dark-fab-hover);
+    --shadow-fab-pressed: var(--primitive-shadow-dark-fab-pressed);
+  }
+}
