@@ -2,6 +2,8 @@
 html[data-theme="light"] {
   --shadow-sm: var(--primitive-shadow-light-sm);
   --shadow-md: var(--primitive-shadow-light-md);
+  --shadow-focus: 0 0 0 3px var(--focus-ring);
+  --shadow-navigation-active: inset 3px 0 0 var(--primary);
   --shadow-fab: var(--primitive-shadow-light-fab);
   --shadow-fab-hover: var(--primitive-shadow-light-fab-hover);
   --shadow-fab-pressed: var(--primitive-shadow-light-fab-pressed);
@@ -10,6 +12,8 @@ html[data-theme="light"] {
 html[data-theme="dark"] {
   --shadow-sm: var(--primitive-shadow-dark-sm);
   --shadow-md: var(--primitive-shadow-dark-md);
+  --shadow-focus: 0 0 0 3px var(--focus-ring);
+  --shadow-navigation-active: inset 3px 0 0 var(--primary);
   --shadow-fab: var(--primitive-shadow-dark-fab);
   --shadow-fab-hover: var(--primitive-shadow-dark-fab-hover);
   --shadow-fab-pressed: var(--primitive-shadow-dark-fab-pressed);
@@ -19,6 +23,8 @@ html[data-theme="dark"] {
   html:not([data-theme]) {
     --shadow-sm: var(--primitive-shadow-dark-sm);
     --shadow-md: var(--primitive-shadow-dark-md);
+    --shadow-focus: 0 0 0 3px var(--focus-ring);
+    --shadow-navigation-active: inset 3px 0 0 var(--primary);
     --shadow-fab: var(--primitive-shadow-dark-fab);
     --shadow-fab-hover: var(--primitive-shadow-dark-fab-hover);
     --shadow-fab-pressed: var(--primitive-shadow-dark-fab-pressed);

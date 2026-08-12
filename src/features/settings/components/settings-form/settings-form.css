@@ -27,7 +27,7 @@
 label {
   display: block;
   font-weight: 500;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
   color: var(--text);
   font-size: var(--font-size-base);
 }
@@ -41,7 +41,7 @@ label {
 input,
 select {
   width: 100%;
-  padding: 9px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
@@ -61,7 +61,7 @@ input:focus,
 select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  box-shadow: var(--shadow-focus);
 }
 
 .save-row {
@@ -78,7 +78,7 @@ select:focus {
 
 .save-row .btn-primary {
   width: auto;
-  padding: 10px 24px;
+  padding: var(--space-2) var(--space-6);
 }
 
 #saved-msg {

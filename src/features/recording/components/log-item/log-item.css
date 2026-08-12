@@ -1,5 +1,5 @@
 .log-chunk {
-  padding: 10px var(--space-3);
+  padding: var(--space-2) var(--space-3);
   margin-bottom: var(--space-2);
   border-left: 3px solid var(--primary);
   background: var(--surface-subtle);
@@ -7,7 +7,7 @@
   white-space: pre-wrap;
   word-break: break-word;
   font-size: var(--font-size-md);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
   color: var(--text);
 }
 

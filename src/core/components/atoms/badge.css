@@ -1,10 +1,10 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -16,18 +16,18 @@
 
 .badge-recording {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-action);
   animation: badge-pulse 1.5s ease-in-out infinite;
 }
 
 .badge-transcribing {
-  background: #f59e0b;
-  color: #fff;
+  background: var(--warning);
+  color: var(--on-action);
 }
 
 .badge-summarizing {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-action);
 }
 
 .badge-done {
@@ -37,7 +37,7 @@
 
 .badge-error {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-action);
 }
 
 @keyframes badge-pulse {

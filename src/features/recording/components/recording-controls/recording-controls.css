@@ -1,5 +1,5 @@
 #status-bar {
-  padding: 4px 0 6px;
+  padding: var(--space-1) 0 var(--space-2);
 }
 
 #status-message {
@@ -9,7 +9,7 @@
   background: var(--danger-surface);
   border: 1px solid var(--danger-border);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: var(--space-2);
 }
 
 #record-btn.fab {
