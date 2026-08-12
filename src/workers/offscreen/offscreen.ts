@@ -1,7 +1,7 @@
 import { saveRecording, updateRecording } from "../../db";
 import type { ExtensionMessage } from "../../messages";
 import type { SpeakerEvent } from "@features/recording/types";
-import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
+import type { ExtensionSettings } from "@features/settings/types";
 import {
   configureAsrRuntime,
   transcribe,
@@ -293,8 +293,8 @@ chrome.runtime.onMessage.addListener(
 
         case "OFFSCREEN_STOP": {
           const { speakerEvents, recordingStartTime } = message.payload;
-          const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-          await stopAndTranscribe(stored as ExtensionSettings, speakerEvents, recordingStartTime);
+          if (!pendingSettings) throw new Error("録音設定を取得できませんでした");
+          await stopAndTranscribe(pendingSettings, speakerEvents, recordingStartTime);
           sendResponse({ ok: true });
           break;
         }

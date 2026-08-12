@@ -11,7 +11,7 @@ export interface BaseMessage {
 export interface StartRecordingMsg extends BaseMessage {
   type: "START_RECORDING";
   target: "background";
-  payload: { meetingTitle: string; settings: ExtensionSettings; tabId: number };
+  payload: { streamId: string; meetingTitle: string; settings: ExtensionSettings; tabId: number };
 }
 
 export interface StopRecordingMsg extends BaseMessage {
