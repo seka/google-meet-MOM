@@ -1,7 +1,12 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { updateRecording } from "../db";
-import type { ExtensionMessage } from "../core/messaging/messages";
+import {
+  addRuntimeMessageListener,
+  postRuntimeMessage,
+  sendRuntimeMessage,
+  type ExtensionMessage,
+} from "@data/chrome-runtime";
 import {
   assertMinutesModelAvailable,
   generateMinutes,
@@ -76,15 +81,7 @@ async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknow
 
   for (let i = 0; i < attempts; i++) {
     try {
-      return await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, (result: unknown) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          resolve(result);
-        });
-      });
+      return await sendRuntimeMessage(message);
     } catch (err) {
       if (i === attempts - 1) throw err;
       await new Promise<void>((resolve) => setTimeout(resolve, 200));
@@ -96,13 +93,10 @@ async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknow
 
 function setState(state: RecordingState, extra: Record<string, unknown> = {}): void {
   currentState = state;
-  chrome.runtime.sendMessage(
-    {
-      type: "STATE_CHANGED",
-      payload: { state, ...extra },
-    },
-    () => {},
-  );
+  postRuntimeMessage({
+    type: "STATE_CHANGED",
+    payload: { state, ...extra },
+  });
 }
 
 async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
@@ -178,7 +172,7 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
   }
 }
 
-chrome.runtime.onMessage.addListener(
+addRuntimeMessageListener(
   (
     message: ExtensionMessage,
     _sender: chrome.runtime.MessageSender,
@@ -207,14 +201,11 @@ chrome.runtime.onMessage.addListener(
               );
             }
 
-            chrome.runtime.sendMessage(
-              {
-                type: "FORWARD_TO_OFFSCREEN",
-                target: "offscreen",
-                payload: { ...message.payload, streamId, recordingStartTime },
-              },
-              () => {},
-            );
+            postRuntimeMessage({
+              type: "FORWARD_TO_OFFSCREEN",
+              target: "offscreen",
+              payload: { ...message.payload, streamId, recordingStartTime },
+            });
             setState("recording");
             sendResponse({ ok: true });
           } catch (err) {
@@ -231,14 +222,11 @@ chrome.runtime.onMessage.addListener(
 
           // content から話者イベントを収集してから offscreen に渡す
           const speakerEvents = await collectSpeakerEvents();
-          chrome.runtime.sendMessage(
-            {
-              type: "OFFSCREEN_STOP",
-              target: "offscreen",
-              payload: { speakerEvents, recordingStartTime },
-            },
-            () => {},
-          );
+          postRuntimeMessage({
+            type: "OFFSCREEN_STOP",
+            target: "offscreen",
+            payload: { speakerEvents, recordingStartTime },
+          });
           break;
         }
 
@@ -262,10 +250,7 @@ chrome.runtime.onMessage.addListener(
 
         case "TRANSCRIPT_CHUNK": {
           // サイドパネルへ中継（target なしで全拡張ページにブロードキャスト）
-          chrome.runtime.sendMessage(
-            { type: "TRANSCRIPT_CHUNK", payload: message.payload },
-            () => {},
-          );
+          postRuntimeMessage({ type: "TRANSCRIPT_CHUNK", payload: message.payload });
           break;
         }
 

@@ -1,4 +1,5 @@
 import type { SpeakerEvent } from "@features/recording/types";
+import { addRuntimeMessageListener } from "@data/chrome-runtime";
 
 export function getMeetingTitle(): string {
   const selectors = ["[data-meeting-title]", 'c-wiz [jsname="r4nke"]', '[jsname="ZaFQO"]'];
@@ -68,9 +69,9 @@ function stopSpeakerTracking(): void {
   observer = null;
 }
 
-chrome.runtime.onMessage.addListener(
+addRuntimeMessageListener(
   (
-    message: { type: string; payload?: Record<string, unknown> },
+    message,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: unknown) => void,
   ) => {
@@ -80,7 +81,7 @@ chrome.runtime.onMessage.addListener(
         return false;
 
       case "START_SPEAKER_TRACKING":
-        startSpeakerTracking((message.payload?.recordingStartTime as number) ?? Date.now());
+        startSpeakerTracking(message.payload.recordingStartTime);
         sendResponse({ ok: true });
         return false;
 

@@ -2,6 +2,11 @@ import type { RecordingState } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
+import {
+  addRuntimeMessageListener,
+  postRuntimeMessage,
+  sendRuntimeMessage,
+} from "@data/chrome-runtime";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
@@ -83,7 +88,7 @@ document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
 
 recordBtn.addEventListener("click", async () => {
   if (currentState === "recording") {
-    chrome.runtime.sendMessage({ type: "STOP_RECORDING", target: "background" }, () => {});
+    postRuntimeMessage({ type: "STOP_RECORDING", target: "background" });
     return;
   }
 
@@ -115,14 +120,11 @@ recordBtn.addEventListener("click", async () => {
 
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
-  chrome.runtime.sendMessage(
-    {
-      type: "START_RECORDING",
-      target: "background",
-      payload: { meetingTitle, settings, tabId: meetTab.id },
-    },
-    () => {},
-  );
+  postRuntimeMessage({
+    type: "START_RECORDING",
+    target: "background",
+    payload: { meetingTitle, settings, tabId: meetTab.id },
+  });
 });
 
 copyBtn.addEventListener("click", () => {
@@ -154,7 +156,7 @@ openOptions.addEventListener("click", (e) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
+addRuntimeMessageListener((message) => {
   if (message.type === "TRANSCRIPT_CHUNK") {
     const { text } = message.payload as { text: string; chunkIndex: number };
     appendChunk(logContent, logPlaceholder, text);
@@ -188,9 +190,11 @@ chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown
   }
 });
 
-chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState } | null) => {
-  if (res) updateUI(res.state);
-});
+sendRuntimeMessage<{ state: RecordingState } | null>({ type: "GET_STATE" })
+  .then((response) => {
+    if (response) updateUI(response.state);
+  })
+  .catch(() => {});
 
 subscribeAppearanceChanges();
 loadAndApplyAppearance().catch((err: unknown) => {

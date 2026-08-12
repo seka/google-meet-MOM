@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vite-plus/test";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
-import type { ExtensionMessage } from "../core/messaging/messages";
+import type { ExtensionMessage } from "@data/chrome-runtime";
 
 type SendResponse = (response?: unknown) => void;
 type MessageHandler = (

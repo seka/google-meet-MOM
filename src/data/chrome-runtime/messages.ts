@@ -1,5 +1,5 @@
-import type { RecordingState, SpeakerEvent } from "@features/recording/types";
 import type { ExtensionSettings } from "@features/settings/types";
+import type { RecordingState, SpeakerEvent } from "@features/recording/types";
 
 export type MessageTarget = "background" | "offscreen";
 
@@ -38,6 +38,10 @@ export interface StartSpeakerTrackingMsg extends BaseMessage {
 
 export interface GetSpeakerEventsMsg extends BaseMessage {
   type: "GET_SPEAKER_EVENTS";
+}
+
+export interface GetMeetingTitleMsg extends BaseMessage {
+  type: "GET_MEETING_TITLE";
 }
 
 export interface SpeakerEventsMsg extends BaseMessage {
@@ -84,7 +88,7 @@ export interface ErrorMsg extends BaseMessage {
 
 export interface TranscriptChunkMsg extends BaseMessage {
   type: "TRANSCRIPT_CHUNK";
-  target: "background";
+  target?: "background";
   payload: { text: string; chunkIndex: number };
 }
 
@@ -119,6 +123,7 @@ export type ExtensionMessage =
   | ErrorMsg
   | StartSpeakerTrackingMsg
   | GetSpeakerEventsMsg
+  | GetMeetingTitleMsg
   | SpeakerEventsMsg
   | TranscriptChunkMsg
   | WhisperTestMsg

@@ -38,6 +38,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@core": resolve(__dirname, "src/core"),
+      "@data": resolve(__dirname, "src/data"),
       "@features": resolve(__dirname, "src/features"),
     },
   },

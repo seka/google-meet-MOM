@@ -1,5 +1,10 @@
 import { saveRecording, updateRecording } from "../../db";
-import type { ExtensionMessage } from "../../core/messaging/messages";
+import {
+  addRuntimeMessageListener,
+  postRuntimeMessage,
+  sendRuntimeMessage,
+  type ExtensionMessage,
+} from "@data/chrome-runtime";
 import type { SpeakerEvent } from "@features/recording/types";
 import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
 import {
@@ -34,54 +39,37 @@ function toErrorMessage(err: unknown): string {
 function reportOffscreenError(err: unknown, sendResponse?: (response?: unknown) => void): void {
   const msg = toErrorMessage(err);
   sendResponse?.({ ok: false, error: msg });
-  chrome.runtime.sendMessage(
-    {
-      type: "ERROR",
-      payload: { message: msg },
-    },
-    () => {},
-  );
+  postRuntimeMessage({
+    type: "ERROR",
+    payload: { message: msg },
+  });
 }
 
 function sendWhisperProgress(progress: number): void {
-  chrome.runtime.sendMessage(
-    {
-      type: "TRANSCRIPTION_PROGRESS",
-      payload: { progress },
-    },
-    () => {},
-  );
+  postRuntimeMessage({
+    type: "TRANSCRIPTION_PROGRESS",
+    payload: { progress },
+  });
 }
 
 function downloadRecordingBlob(blob: Blob, filename: string): Promise<void> {
   const url = URL.createObjectURL(blob);
 
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      {
-        type: "DOWNLOAD_URL",
-        target: "background",
-        payload: { url, filename },
-      },
-      (result: { ok: boolean; error?: string } | null) => {
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 60_000);
-
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-
-        if (!result?.ok) {
-          reject(new Error(result?.error ?? "録音ファイルを保存できませんでした"));
-          return;
-        }
-
-        resolve();
-      },
-    );
-  });
+  return sendRuntimeMessage<{ ok: boolean; error?: string } | null>({
+    type: "DOWNLOAD_URL",
+    target: "background",
+    payload: { url, filename },
+  })
+    .then((result) => {
+      if (!result?.ok) {
+        throw new Error(result?.error ?? "録音ファイルを保存できませんでした");
+      }
+    })
+    .finally(() => {
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60_000);
+    });
 }
 
 // 設定間隔ごとに蓄積チャンクを処理してサイドパネルへ送信
@@ -103,14 +91,11 @@ async function processNextChunk(): Promise<void> {
       language: pendingSettings.language,
       onProgress: sendWhisperProgress,
     });
-    chrome.runtime.sendMessage(
-      {
-        type: "TRANSCRIPT_CHUNK",
-        target: "background",
-        payload: { text, chunkIndex: Math.floor(startIdx / WINDOW) },
-      },
-      () => {},
-    );
+    postRuntimeMessage({
+      type: "TRANSCRIPT_CHUNK",
+      target: "background",
+      payload: { text, chunkIndex: Math.floor(startIdx / WINDOW) },
+    });
   } catch {
     // 失敗した場合はカーソルを戻して次回リトライ
     processedChunkCount = startIdx;
@@ -209,14 +194,11 @@ async function stopAndTranscribe(
         }
       }
 
-      chrome.runtime.sendMessage(
-        {
-          type: "RECORDING_SAVED",
-          target: "background",
-          payload: { recordingId },
-        },
-        () => {},
-      );
+      postRuntimeMessage({
+        type: "RECORDING_SAVED",
+        target: "background",
+        payload: { recordingId },
+      });
 
       await transcribeAndSave(
         audioBlob,
@@ -254,27 +236,21 @@ async function transcribeAndSave(
 
     await updateRecording(recordingId, { transcript });
 
-    chrome.runtime.sendMessage(
-      {
-        type: "TRANSCRIPTION_DONE",
-        target: "background",
-        payload: { transcript, recordingId },
-      },
-      () => {},
-    );
+    postRuntimeMessage({
+      type: "TRANSCRIPTION_DONE",
+      target: "background",
+      payload: { transcript, recordingId },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    chrome.runtime.sendMessage(
-      {
-        type: "ERROR",
-        payload: { message: `文字起こしエラー: ${msg}` },
-      },
-      () => {},
-    );
+    postRuntimeMessage({
+      type: "ERROR",
+      payload: { message: `文字起こしエラー: ${msg}` },
+    });
   }
 }
 
-chrome.runtime.onMessage.addListener(
+addRuntimeMessageListener(
   (
     message: ExtensionMessage,
     _sender: chrome.runtime.MessageSender,
