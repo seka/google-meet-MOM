@@ -1,23 +1,23 @@
 .card {
-  background: var(--options-surface);
-  border: 1px solid var(--options-border);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-title {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--options-text-muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .field {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .field:last-child {
@@ -27,26 +27,26 @@
 label {
   display: block;
   font-weight: 500;
-  margin-bottom: 6px;
-  color: var(--options-text);
-  font-size: 14px;
+  margin-bottom: var(--space-2);
+  color: var(--text);
+  font-size: var(--font-size-base);
 }
 
 .hint {
-  font-size: 12px;
-  color: var(--options-text-muted);
-  margin-top: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
 }
 
 input,
 select {
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--options-border-strong);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  font-size: 14px;
-  background: var(--options-surface);
-  color: var(--options-text);
+  font-size: var(--font-size-base);
+  background: var(--surface);
+  color: var(--text);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -54,21 +54,21 @@ select {
 
 select:disabled,
 option:disabled {
-  color: var(--options-text-muted);
+  color: var(--text-muted);
 }
 
 input:focus,
 select:focus {
   outline: none;
-  border-color: var(--options-primary);
-  box-shadow: 0 0 0 3px rgba(47, 125, 50, 0.18);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-focus);
 }
 
 .save-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 16px;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
   margin-left: 240px;
 }
 
@@ -78,33 +78,33 @@ select:focus {
 
 .save-row .btn-primary {
   width: auto;
-  padding: 10px 24px;
+  padding: var(--space-2) var(--space-6);
 }
 
 #saved-msg {
-  font-size: 13px;
-  color: var(--options-primary);
+  font-size: var(--font-size-md);
+  color: var(--primary);
   display: none;
 }
 
 .btn-primary {
-  background: var(--options-action);
-  color: #fff;
+  background: var(--action);
+  color: var(--on-action);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--options-action-hover);
+  background: var(--action-hover);
 }
 
 .btn-secondary {
-  background: var(--options-surface);
-  color: var(--options-text);
-  border-color: var(--options-border-strong);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--options-surface-subtle);
+  background: var(--surface-subtle);
 }
 
 @media (max-width: 720px) {

@@ -1,7 +1,7 @@
 .settings-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   position: sticky;
   top: 16px;
 }
@@ -10,26 +10,26 @@
   width: 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   font: inherit;
   font-weight: 500;
   text-align: left;
-  color: var(--options-text-muted);
+  color: var(--text-muted);
   background: transparent;
   cursor: pointer;
 }
 
 .nav-item:hover {
-  color: var(--options-text);
-  background: var(--options-surface-subtle);
-  border-color: var(--options-border);
+  color: var(--text);
+  background: var(--surface-subtle);
+  border-color: var(--border);
 }
 
 .nav-item.active {
-  color: var(--options-primary);
-  background: var(--options-surface);
-  border-color: var(--options-border-strong);
-  box-shadow: inset 3px 0 0 var(--options-primary);
+  color: var(--primary);
+  background: var(--surface);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-navigation-active);
 }
 
 .screen {

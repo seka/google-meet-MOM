@@ -1,25 +1,25 @@
 .test-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .test-label {
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-weight: 500;
-  color: var(--options-text-muted);
-  margin-top: 10px;
-  margin-bottom: 4px;
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .test-output {
-  background: var(--options-surface-subtle);
-  border: 1px solid var(--options-border);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-md);
   min-height: 48px;
-  color: var(--options-text);
+  color: var(--text);
   white-space: pre-wrap;
   word-break: break-all;
 }

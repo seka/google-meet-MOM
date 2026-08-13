@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0 16px 12px;
+  padding: 0 var(--space-4) var(--space-3);
 }
 
 .result-section[hidden] {
@@ -14,16 +14,16 @@
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   flex-shrink: 0;
 }
 
 .tab {
   background: none;
   border: none;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-size-md);
   color: var(--text-muted);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -49,21 +49,21 @@
   word-break: break-word;
   flex: 1;
   overflow-y: auto;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   max-height: 200px;
   box-shadow: var(--shadow-sm);
 }
 
 .actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   flex-shrink: 0;
 }
 
