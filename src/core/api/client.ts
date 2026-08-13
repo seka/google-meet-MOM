@@ -22,9 +22,9 @@ export class HttpClient {
   private readonly baseUrl: string;
   private readonly fetcher: typeof fetch;
 
-  constructor({ baseUrl, fetcher = fetch }: HttpClientOptions) {
+  constructor({ baseUrl, fetcher }: HttpClientOptions) {
     this.baseUrl = baseUrl;
-    this.fetcher = fetcher;
+    this.fetcher = fetcher ?? globalThis.fetch.bind(globalThis);
   }
 
   async get<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {

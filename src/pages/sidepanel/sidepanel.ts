@@ -11,6 +11,30 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function ignoreOptionalMessageError(): void {
+  void chrome.runtime.lastError;
+}
+
+function chooseTabMediaStreamId(): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    chrome.desktopCapture.chooseDesktopMedia(["tab", "audio"], (id, options) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!id) {
+        reject(new Error("タブの選択がキャンセルされました"));
+        return;
+      }
+      if (!options.canRequestAudioTrack) {
+        reject(new Error("選択したタブの音声共有を有効にしてください"));
+        return;
+      }
+      resolve(id);
+    });
+  });
+}
+
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
   recordingControls.render(state, message);
@@ -18,7 +42,10 @@ function updateUI(state: RecordingState, message = ""): void {
 
 async function toggleRecording(): Promise<void> {
   if (currentState === "recording") {
-    chrome.runtime.sendMessage({ type: "STOP_RECORDING", target: "background" }, () => {});
+    chrome.runtime.sendMessage(
+      { type: "STOP_RECORDING", target: "background" },
+      ignoreOptionalMessageError,
+    );
     return;
   }
 
@@ -27,35 +54,45 @@ async function toggleRecording(): Promise<void> {
   recordingLog.reset();
   recordingResult.reset();
 
-  const [meetTab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-    url: "https://meet.google.com/*",
-  });
+  const streamIdPromise = chooseTabMediaStreamId();
 
-  if (!meetTab?.id) {
-    updateUI("error", "Google Meet のタブが見つかりません");
-    return;
-  }
-
-  let meetingTitle = "Google Meet";
   try {
-    const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: "GET_MEETING_TITLE" });
-    meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle;
-  } catch {
-    // content script が応答しない場合はスキップ
+    const [meetTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+      url: "https://meet.google.com/*",
+    });
+
+    if (!meetTab?.id) {
+      await streamIdPromise.catch(() => {});
+      updateUI("error", "Google Meet のタブが見つかりません");
+      return;
+    }
+
+    let meetingTitle = "Google Meet";
+    try {
+      const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: "GET_MEETING_TITLE" });
+      meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle;
+    } catch {
+      // content script が応答しない場合はスキップ
+    }
+
+    const [streamId, settings] = await Promise.all([
+      streamIdPromise,
+      chrome.storage.sync.get(DEFAULT_SETTINGS),
+    ]);
+
+    chrome.runtime.sendMessage(
+      {
+        type: "START_RECORDING",
+        target: "background",
+        payload: { streamId, meetingTitle, settings, tabId: meetTab.id },
+      },
+      ignoreOptionalMessageError,
+    );
+  } catch (err) {
+    updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);
   }
-
-  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-
-  chrome.runtime.sendMessage(
-    {
-      type: "START_RECORDING",
-      target: "background",
-      payload: { meetingTitle, settings, tabId: meetTab.id },
-    },
-    () => {},
-  );
 }
 
 const recordingControls = initializeRecordingControls(() => {

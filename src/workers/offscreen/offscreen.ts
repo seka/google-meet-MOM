@@ -1,7 +1,7 @@
 import { saveRecording, updateRecording } from "../../db";
 import type { ExtensionMessage } from "../../messages";
 import type { SpeakerEvent } from "@features/recording/types";
-import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
+import type { ExtensionSettings } from "@features/settings/types";
 import {
   configureAsrRuntime,
   transcribe,
@@ -31,15 +31,20 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function ignoreOptionalMessageError(): void {
+  void chrome.runtime.lastError;
+}
+
 function reportOffscreenError(err: unknown, sendResponse?: (response?: unknown) => void): void {
   const msg = toErrorMessage(err);
   sendResponse?.({ ok: false, error: msg });
   chrome.runtime.sendMessage(
     {
       type: "ERROR",
+      target: "background",
       payload: { message: msg },
     },
-    () => {},
+    ignoreOptionalMessageError,
   );
 }
 
@@ -49,7 +54,7 @@ function sendWhisperProgress(progress: number): void {
       type: "TRANSCRIPTION_PROGRESS",
       payload: { progress },
     },
-    () => {},
+    ignoreOptionalMessageError,
   );
 }
 
@@ -109,7 +114,7 @@ async function processNextChunk(): Promise<void> {
         target: "background",
         payload: { text, chunkIndex: Math.floor(startIdx / WINDOW) },
       },
-      () => {},
+      ignoreOptionalMessageError,
     );
   } catch {
     // 失敗した場合はカーソルを戻して次回リトライ
@@ -131,7 +136,7 @@ async function startRecording(
 
   const tabStream = await navigator.mediaDevices.getUserMedia({
     audio: {
-      chromeMediaSource: "tab",
+      chromeMediaSource: "desktop",
       chromeMediaSourceId: streamId,
     } as unknown as MediaTrackConstraints,
     video: false,
@@ -215,7 +220,7 @@ async function stopAndTranscribe(
           target: "background",
           payload: { recordingId },
         },
-        () => {},
+        ignoreOptionalMessageError,
       );
 
       await transcribeAndSave(
@@ -260,16 +265,17 @@ async function transcribeAndSave(
         target: "background",
         payload: { transcript, recordingId },
       },
-      () => {},
+      ignoreOptionalMessageError,
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     chrome.runtime.sendMessage(
       {
         type: "ERROR",
+        target: "background",
         payload: { message: `文字起こしエラー: ${msg}` },
       },
-      () => {},
+      ignoreOptionalMessageError,
     );
   }
 }
@@ -293,8 +299,8 @@ chrome.runtime.onMessage.addListener(
 
         case "OFFSCREEN_STOP": {
           const { speakerEvents, recordingStartTime } = message.payload;
-          const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-          await stopAndTranscribe(stored as ExtensionSettings, speakerEvents, recordingStartTime);
+          if (!pendingSettings) throw new Error("録音設定を取得できませんでした");
+          await stopAndTranscribe(pendingSettings, speakerEvents, recordingStartTime);
           sendResponse({ ok: true });
           break;
         }
