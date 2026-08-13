@@ -1,5 +1,5 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
-import { DEFAULT_SETTINGS } from "@features/settings/types";
+import type { ExtensionSettings } from "@features/settings/types";
 import { updateRecording } from "../db";
 import type { ExtensionMessage } from "../messages";
 import {
@@ -19,24 +19,14 @@ let currentRecordingId: string | null = null;
 let currentMeetingTitle = "Google Meet";
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
+let currentSettings: ExtensionSettings | null = null;
 
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function toRecordingStartErrorMessage(err: unknown): string {
-  const message = toErrorMessage(err);
-  const normalizedMessage = message.toLowerCase();
-
-  if (
-    normalizedMessage.includes("extension has not been invoked") ||
-    normalizedMessage.includes("activetab") ||
-    normalizedMessage.includes("chrome pages cannot be captured")
-  ) {
-    return "録音対象タブをキャプチャできません。Google Meet のタブを選択した状態で拡張機能アイコンからサイドパネルを開き直して、もう一度開始してください。chrome:// などの Chrome 内部ページは録音できません。";
-  }
-
-  return message;
+function ignoreOptionalMessageError(): void {
+  void chrome.runtime.lastError;
 }
 
 function reportBackgroundError(err: unknown): void {
@@ -58,7 +48,7 @@ async function ensureOffscreenDocument(): Promise<void> {
 
   await chrome.offscreen.createDocument({
     url: "workers/offscreen/offscreen.html",
-    reasons: [chrome.offscreen.Reason.USER_MEDIA],
+    reasons: [chrome.offscreen.Reason.USER_MEDIA, chrome.offscreen.Reason.DISPLAY_MEDIA],
     justification: "Recording Google Meet tab audio and microphone",
   });
 }
@@ -101,7 +91,7 @@ function setState(state: RecordingState, extra: Record<string, unknown> = {}): v
       type: "STATE_CHANGED",
       payload: { state, ...extra },
     },
-    () => {},
+    ignoreOptionalMessageError,
   );
 }
 
@@ -118,37 +108,21 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
   });
 }
 
-async function getTabMediaStreamId(tabId: number): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, (id) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      if (!id) {
-        reject(new Error("録音用ストリーム ID を取得できませんでした"));
-        return;
-      }
-      resolve(id);
-    });
-  });
-}
-
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   setState("summarizing", { recordingId });
-  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+  if (!currentSettings) throw new Error("録音設定を取得できませんでした");
   const generatedAt = new Date().toISOString();
 
   try {
     const minutes = await generateMinutes({
-      ollamaUrl: settings["ollamaUrl"] as string,
-      ollamaModel: settings["ollamaModel"] as string,
+      ollamaUrl: currentSettings.ollamaUrl,
+      ollamaModel: currentSettings.ollamaModel,
       transcript,
     });
 
     await updateRecording(recordingId, { minutes });
 
-    if (settings["minutesOutputDestination"] === "download") {
+    if (currentSettings.minutesOutputDestination === "download") {
       const filename = buildOutputFilename({
         meetingTitle: currentMeetingTitle,
         date: generatedAt,
@@ -184,7 +158,7 @@ chrome.runtime.onMessage.addListener(
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: unknown) => void,
   ) => {
-    if (message.target === "offscreen") return false;
+    if (message.target !== "background" && message.type !== "GET_STATE") return false;
 
     (async () => {
       switch (message.type) {
@@ -195,15 +169,14 @@ chrome.runtime.onMessage.addListener(
             recordingStartTime = Date.now();
             meetTabId = message.payload.tabId ?? null;
             currentMeetingTitle = message.payload.meetingTitle;
-
-            const streamId = await getTabMediaStreamId(message.payload.tabId);
+            currentSettings = message.payload.settings;
 
             // content script に話者追跡を開始させる
             if (meetTabId) {
               chrome.tabs.sendMessage(
                 meetTabId,
                 { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
-                () => {},
+                ignoreOptionalMessageError,
               );
             }
 
@@ -211,14 +184,14 @@ chrome.runtime.onMessage.addListener(
               {
                 type: "FORWARD_TO_OFFSCREEN",
                 target: "offscreen",
-                payload: { ...message.payload, streamId, recordingStartTime },
+                payload: { ...message.payload, recordingStartTime },
               },
-              () => {},
+              ignoreOptionalMessageError,
             );
             setState("recording");
             sendResponse({ ok: true });
           } catch (err) {
-            const msg = toRecordingStartErrorMessage(err);
+            const msg = toErrorMessage(err);
             setState("error", { message: msg });
             sendResponse({ ok: false, error: msg });
           }
@@ -237,7 +210,7 @@ chrome.runtime.onMessage.addListener(
               target: "offscreen",
               payload: { speakerEvents, recordingStartTime },
             },
-            () => {},
+            ignoreOptionalMessageError,
           );
           break;
         }
@@ -264,7 +237,7 @@ chrome.runtime.onMessage.addListener(
           // サイドパネルへ中継（target なしで全拡張ページにブロードキャスト）
           chrome.runtime.sendMessage(
             { type: "TRANSCRIPT_CHUNK", payload: message.payload },
-            () => {},
+            ignoreOptionalMessageError,
           );
           break;
         }
