@@ -46,6 +46,7 @@ export async function loadWhisper(
   if (!whisperPipeline || whisperPipelineModel !== model) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     whisperPipeline = (await (pipeline as any)("automatic-speech-recognition", model, {
+      dtype: "q8",
       progress_callback: (info: Record<string, unknown>) => {
         if (info["status"] === "progress") {
           onProgress?.((info["progress"] as number) ?? 0);
@@ -67,7 +68,7 @@ export async function transcribeWithWhisper(
     task: "transcribe",
     chunk_length_s: 30,
     stride_length_s: 5,
-    ...(options.returnTimestamps ? { return_timestamps: "word" } : {}),
+    ...(options.returnTimestamps ? { return_timestamps: true } : {}),
   });
   const singleResult = Array.isArray(result) ? result[0] : result;
 
