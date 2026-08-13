@@ -96,9 +96,6 @@ describe("STOP_RECORDING", () => {
 
   it("meetTabId がある場合は話者イベントを収集して OFFSCREEN_STOP に含める", async () => {
     // meetTabId を設定するために先に録音開始する
-    (chrome.tabCapture.getMediaStreamId as ReturnType<typeof vi.fn>).mockImplementation(
-      (_opts: unknown, cb: (id: string) => void) => cb("stream-tmp"),
-    );
     const startRes = vi.fn();
     bgHandler(
       { type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD },

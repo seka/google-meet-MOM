@@ -25,6 +25,10 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function ignoreOptionalMessageError(): void {
+  void chrome.runtime.lastError;
+}
+
 function reportBackgroundError(err: unknown): void {
   setState("error", { message: toErrorMessage(err) });
 }
@@ -44,7 +48,7 @@ async function ensureOffscreenDocument(): Promise<void> {
 
   await chrome.offscreen.createDocument({
     url: "workers/offscreen/offscreen.html",
-    reasons: [chrome.offscreen.Reason.USER_MEDIA],
+    reasons: [chrome.offscreen.Reason.USER_MEDIA, chrome.offscreen.Reason.DISPLAY_MEDIA],
     justification: "Recording Google Meet tab audio and microphone",
   });
 }
@@ -87,7 +91,7 @@ function setState(state: RecordingState, extra: Record<string, unknown> = {}): v
       type: "STATE_CHANGED",
       payload: { state, ...extra },
     },
-    () => {},
+    ignoreOptionalMessageError,
   );
 }
 
@@ -154,7 +158,7 @@ chrome.runtime.onMessage.addListener(
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: unknown) => void,
   ) => {
-    if (message.target === "offscreen") return false;
+    if (message.target !== "background" && message.type !== "GET_STATE") return false;
 
     (async () => {
       switch (message.type) {
@@ -172,7 +176,7 @@ chrome.runtime.onMessage.addListener(
               chrome.tabs.sendMessage(
                 meetTabId,
                 { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
-                () => {},
+                ignoreOptionalMessageError,
               );
             }
 
@@ -182,7 +186,7 @@ chrome.runtime.onMessage.addListener(
                 target: "offscreen",
                 payload: { ...message.payload, recordingStartTime },
               },
-              () => {},
+              ignoreOptionalMessageError,
             );
             setState("recording");
             sendResponse({ ok: true });
@@ -206,7 +210,7 @@ chrome.runtime.onMessage.addListener(
               target: "offscreen",
               payload: { speakerEvents, recordingStartTime },
             },
-            () => {},
+            ignoreOptionalMessageError,
           );
           break;
         }
@@ -233,7 +237,7 @@ chrome.runtime.onMessage.addListener(
           // サイドパネルへ中継（target なしで全拡張ページにブロードキャスト）
           chrome.runtime.sendMessage(
             { type: "TRANSCRIPT_CHUNK", payload: message.payload },
-            () => {},
+            ignoreOptionalMessageError,
           );
           break;
         }

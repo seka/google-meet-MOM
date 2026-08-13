@@ -38,15 +38,23 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function getTabMediaStreamId(): Promise<string> {
+function ignoreOptionalMessageError(): void {
+  void chrome.runtime.lastError;
+}
+
+function chooseTabMediaStreamId(): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-    chrome.tabCapture.getMediaStreamId({}, (id: string) => {
+    chrome.desktopCapture.chooseDesktopMedia(["tab", "audio"], (id, options) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
       }
       if (!id) {
-        reject(new Error("録音用ストリーム ID を取得できませんでした"));
+        reject(new Error("タブの選択がキャンセルされました"));
+        return;
+      }
+      if (!options.canRequestAudioTrack) {
+        reject(new Error("選択したタブの音声共有を有効にしてください"));
         return;
       }
       resolve(id);
@@ -99,7 +107,10 @@ document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
 
 recordBtn.addEventListener("click", async () => {
   if (currentState === "recording") {
-    chrome.runtime.sendMessage({ type: "STOP_RECORDING", target: "background" }, () => {});
+    chrome.runtime.sendMessage(
+      { type: "STOP_RECORDING", target: "background" },
+      ignoreOptionalMessageError,
+    );
     return;
   }
 
@@ -110,8 +121,7 @@ recordBtn.addEventListener("click", async () => {
   transcriptText.textContent = "";
   minutesText.textContent = "";
 
-  // tabCapture はユーザー操作の直後に同期的に開始する必要がある。
-  const streamIdPromise = getTabMediaStreamId();
+  const streamIdPromise = chooseTabMediaStreamId();
 
   try {
     const [meetTab] = await chrome.tabs.query({
@@ -145,7 +155,7 @@ recordBtn.addEventListener("click", async () => {
         target: "background",
         payload: { streamId, meetingTitle, settings, tabId: meetTab.id },
       },
-      () => {},
+      ignoreOptionalMessageError,
     );
   } catch (err) {
     updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);
