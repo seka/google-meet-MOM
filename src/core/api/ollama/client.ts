@@ -45,7 +45,13 @@ export class OllamaClient {
 
 export function toOllamaErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    return `Ollama API: ${error.status} ${error.statusText}`;
+    const detail =
+      typeof error.data === "object" && error.data !== null && "error" in error.data
+        ? String(error.data.error)
+        : typeof error.data === "string"
+          ? error.data
+          : "";
+    return `Ollama API: ${error.status} ${error.statusText}${detail ? `: ${detail}` : ""}`;
   }
   return error instanceof Error ? error.message : String(error);
 }

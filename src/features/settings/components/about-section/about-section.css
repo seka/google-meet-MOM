@@ -1,11 +1,11 @@
 .about-card h2 {
-  font-size: var(--font-size-lg);
+  font-size: 18px;
   font-weight: 600;
-  margin-bottom: var(--space-2);
+  margin-bottom: 8px;
 }
 
 .about-text {
-  color: var(--text-muted);
+  color: var(--options-text-muted);
   line-height: 1.7;
   margin-bottom: 18px;
 }
@@ -18,16 +18,16 @@
 .about-list div {
   display: grid;
   grid-template-columns: 120px 1fr;
-  gap: var(--space-3);
+  gap: 12px;
   padding-top: 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--options-border);
 }
 
 .about-list dt {
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
+  color: var(--options-text-muted);
+  font-size: 12px;
 }
 
 .about-list dd {
-  color: var(--text);
+  color: var(--options-text);
 }

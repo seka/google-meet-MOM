@@ -12,7 +12,7 @@ import {
 import { subscribeOffscreenConnectionTests } from "@data/api/connection-test-runtime";
 import { downloadRuntimeUrl } from "@data/api/file-runtime";
 import type { SpeakerEvent } from "@features/recording/types";
-import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
+import type { ExtensionSettings } from "@features/settings/types";
 import {
   configureAsrRuntime,
   transcribe,
@@ -108,7 +108,7 @@ async function startRecording(
 
   const tabStream = await navigator.mediaDevices.getUserMedia({
     audio: {
-      chromeMediaSource: "tab",
+      chromeMediaSource: "desktop",
       chromeMediaSourceId: streamId,
     } as unknown as MediaTrackConstraints,
     video: false,
@@ -238,15 +238,11 @@ subscribeOffscreenRecordingCommands({
       .catch((err: unknown) => reportOffscreenError(err, respond));
   },
   stop(input, respond) {
-    chrome.storage.sync
-      .get(DEFAULT_SETTINGS)
-      .then((stored) =>
-        stopAndTranscribe(
-          stored as ExtensionSettings,
-          input.speakerEvents,
-          input.recordingStartTime,
-        ),
-      )
+    if (!pendingSettings) {
+      respond({ ok: false, error: "録音設定を取得できませんでした" });
+      return;
+    }
+    stopAndTranscribe(pendingSettings, input.speakerEvents, input.recordingStartTime)
       .then(() => respond({ ok: true }))
       .catch((err: unknown) => reportOffscreenError(err, respond));
   },

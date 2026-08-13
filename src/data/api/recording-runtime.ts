@@ -29,6 +29,7 @@ export interface RuntimeSpeakerEvent {
 }
 
 export interface StartRecordingInput {
+  streamId: string;
   meetingTitle: string;
   settings: RuntimeRecordingSettings;
   tabId: number;

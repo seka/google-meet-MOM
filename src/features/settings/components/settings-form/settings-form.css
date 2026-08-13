@@ -1,23 +1,23 @@
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--options-surface);
+  border: 1px solid var(--options-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  margin-bottom: var(--space-4);
-  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .card-title {
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--options-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: var(--space-4);
+  margin-bottom: 16px;
 }
 
 .field {
-  margin-bottom: var(--space-4);
+  margin-bottom: 16px;
 }
 
 .field:last-child {
@@ -28,25 +28,25 @@ label {
   display: block;
   font-weight: 500;
   margin-bottom: 6px;
-  color: var(--text);
-  font-size: var(--font-size-base);
+  color: var(--options-text);
+  font-size: 14px;
 }
 
 .hint {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--options-text-muted);
+  margin-top: 4px;
 }
 
 input,
 select {
   width: 100%;
   padding: 9px 12px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--options-border-strong);
   border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  background: var(--surface);
-  color: var(--text);
+  font-size: 14px;
+  background: var(--options-surface);
+  color: var(--options-text);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -54,21 +54,21 @@ select {
 
 select:disabled,
 option:disabled {
-  color: var(--text-muted);
+  color: var(--options-text-muted);
 }
 
 input:focus,
 select:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  border-color: var(--options-primary);
+  box-shadow: 0 0 0 3px rgba(47, 125, 50, 0.18);
 }
 
 .save-row {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
+  gap: 12px;
+  margin-top: 16px;
   margin-left: 240px;
 }
 
@@ -82,29 +82,29 @@ select:focus {
 }
 
 #saved-msg {
-  font-size: var(--font-size-md);
-  color: var(--primary);
+  font-size: 13px;
+  color: var(--options-primary);
   display: none;
 }
 
 .btn-primary {
-  background: var(--action);
-  color: var(--on-action);
+  background: var(--options-action);
+  color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--action-hover);
+  background: var(--options-action-hover);
 }
 
 .btn-secondary {
-  background: var(--surface);
-  color: var(--text);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  background: var(--options-surface);
+  color: var(--options-text);
+  border-color: var(--options-border-strong);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--surface-subtle);
+  background: var(--options-surface-subtle);
 }
 
 @media (max-width: 720px) {

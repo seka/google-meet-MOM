@@ -1,7 +1,7 @@
 .settings-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 4px;
   position: sticky;
   top: 16px;
 }
@@ -14,22 +14,22 @@
   font: inherit;
   font-weight: 500;
   text-align: left;
-  color: var(--text-muted);
+  color: var(--options-text-muted);
   background: transparent;
   cursor: pointer;
 }
 
 .nav-item:hover {
-  color: var(--text);
-  background: var(--surface-subtle);
-  border-color: var(--border);
+  color: var(--options-text);
+  background: var(--options-surface-subtle);
+  border-color: var(--options-border);
 }
 
 .nav-item.active {
-  color: var(--primary);
-  background: var(--surface);
-  border-color: var(--border-strong);
-  box-shadow: inset 3px 0 0 var(--primary);
+  color: var(--options-primary);
+  background: var(--options-surface);
+  border-color: var(--options-border-strong);
+  box-shadow: inset 3px 0 0 var(--options-primary);
 }
 
 .screen {

@@ -45,6 +45,26 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function chooseTabMediaStreamId(): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    chrome.desktopCapture.chooseDesktopMedia(["tab", "audio"], (id, options) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!id) {
+        reject(new Error("タブの選択がキャンセルされました"));
+        return;
+      }
+      if (!options.canRequestAudioTrack) {
+        reject(new Error("選択したタブの音声共有を有効にしてください"));
+        return;
+      }
+      resolve(id);
+    });
+  });
+}
+
 function updateUI(state: RecordingState, message = ""): void {
   currentState = state;
 
@@ -101,28 +121,38 @@ recordBtn.addEventListener("click", async () => {
   transcriptText.textContent = "";
   minutesText.textContent = "";
 
-  const [meetTab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-    url: "https://meet.google.com/*",
-  });
+  const streamIdPromise = chooseTabMediaStreamId();
 
-  if (!meetTab?.id) {
-    updateUI("error", "Google Meet のタブが見つかりません");
-    return;
-  }
-
-  let meetingTitle = "Google Meet";
   try {
-    const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: "GET_MEETING_TITLE" });
-    meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle;
-  } catch {
-    // content script が応答しない場合はスキップ
+    const [meetTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+      url: "https://meet.google.com/*",
+    });
+
+    if (!meetTab?.id) {
+      await streamIdPromise.catch(() => {});
+      updateUI("error", "Google Meet のタブが見つかりません");
+      return;
+    }
+
+    let meetingTitle = "Google Meet";
+    try {
+      const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: "GET_MEETING_TITLE" });
+      meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle;
+    } catch {
+      // content script が応答しない場合はスキップ
+    }
+
+    const [streamId, settings] = await Promise.all([
+      streamIdPromise,
+      chrome.storage.sync.get(DEFAULT_SETTINGS),
+    ]);
+
+    startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
+  } catch (err) {
+    updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);
   }
-
-  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-
-  startRecording({ meetingTitle, settings, tabId: meetTab.id });
 });
 
 copyBtn.addEventListener("click", () => {

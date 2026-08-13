@@ -1,5 +1,5 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
-import { DEFAULT_SETTINGS } from "@features/settings/types";
+import type { ExtensionSettings } from "@features/settings/types";
 import { updateRecording } from "../db";
 import {
   publishRecordingState,
@@ -34,6 +34,7 @@ let currentRecordingId: string | null = null;
 let currentMeetingTitle = "Google Meet";
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
+let currentSettings: ExtensionSettings | null = null;
 
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -73,7 +74,7 @@ async function ensureOffscreenDocument(): Promise<void> {
 
   await chrome.offscreen.createDocument({
     url: "workers/offscreen/offscreen.html",
-    reasons: [chrome.offscreen.Reason.USER_MEDIA],
+    reasons: [chrome.offscreen.Reason.USER_MEDIA, chrome.offscreen.Reason.DISPLAY_MEDIA],
     justification: "Recording Google Meet tab audio and microphone",
   });
 }
@@ -126,37 +127,21 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
   });
 }
 
-async function getTabMediaStreamId(tabId: number): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, (id) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      if (!id) {
-        reject(new Error("録音用ストリーム ID を取得できませんでした"));
-        return;
-      }
-      resolve(id);
-    });
-  });
-}
-
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   setState("summarizing", { recordingId });
-  const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+  if (!currentSettings) throw new Error("録音設定を取得できませんでした");
   const generatedAt = new Date().toISOString();
 
   try {
     const minutes = await generateMinutes({
-      ollamaUrl: settings["ollamaUrl"] as string,
-      ollamaModel: settings["ollamaModel"] as string,
+      ollamaUrl: currentSettings.ollamaUrl,
+      ollamaModel: currentSettings.ollamaModel,
       transcript,
     });
 
     await updateRecording(recordingId, { minutes });
 
-    if (settings["minutesOutputDestination"] === "download") {
+    if (currentSettings.minutesOutputDestination === "download") {
       const filename = buildOutputFilename({
         meetingTitle: currentMeetingTitle,
         date: generatedAt,
@@ -194,7 +179,7 @@ subscribeBackgroundRecordingCommands({
         recordingStartTime = Date.now();
         meetTabId = input.tabId;
         currentMeetingTitle = input.meetingTitle;
-        const streamId = await getTabMediaStreamId(input.tabId);
+        currentSettings = input.settings;
 
         if (meetTabId) {
           chrome.tabs.sendMessage(
@@ -204,7 +189,7 @@ subscribeBackgroundRecordingCommands({
           );
         }
 
-        startOffscreenRecording({ ...input, streamId, recordingStartTime });
+        startOffscreenRecording({ ...input, recordingStartTime });
         setState("recording");
         respond({ ok: true });
       } catch (err) {

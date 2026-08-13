@@ -47,6 +47,8 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2020",
     minify: false,
+    // Chrome Extension では生成された modulepreload が再利用されず警告になるため無効化する。
+    modulePreload: false,
     rollupOptions: {
       input: {
         background: resolve(__dirname, "src/workers/background.ts"),
