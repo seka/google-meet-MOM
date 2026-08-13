@@ -1,8 +1,8 @@
 import type { RecordingState } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
-import { initializeRecordingLog } from "@features/recording/components/log-section/log-section";
-import { initializeRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
-import { initializeRecordingResult } from "@features/recording/components/recording-result/recording-result";
+import { createRecordingLog } from "@features/recording/components/log-section/log-section";
+import { createRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
+import { createRecordingResult } from "@features/recording/components/recording-result/recording-result";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
 
 let currentState: RecordingState = "idle";
@@ -58,11 +58,11 @@ async function toggleRecording(): Promise<void> {
   );
 }
 
-const recordingControls = initializeRecordingControls(() => {
+const recordingControls = createRecordingControls(() => {
   void toggleRecording();
 });
-const recordingLog = initializeRecordingLog();
-const recordingResult = initializeRecordingResult((message) => updateUI("error", message));
+const recordingLog = createRecordingLog();
+const recordingResult = createRecordingResult((message) => updateUI("error", message));
 
 const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
 openOptions.addEventListener("click", (e) => {

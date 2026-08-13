@@ -6,7 +6,7 @@ export interface RecordingResult {
   showTranscript(transcript: string): void;
 }
 
-export function initializeRecordingResult(onError: (message: string) => void): RecordingResult {
+export function createRecordingResult(onError: (message: string) => void): RecordingResult {
   const transcriptText = document.getElementById("transcript-text") as HTMLPreElement;
   const minutesText = document.getElementById("minutes-text") as HTMLPreElement;
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".tab"));

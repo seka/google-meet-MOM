@@ -19,7 +19,7 @@ export function resetLog(logContent: HTMLElement, placeholder: HTMLElement): voi
   placeholder.hidden = false;
 }
 
-export function initializeRecordingLog(): RecordingLog {
+export function createRecordingLog(): RecordingLog {
   const logContent = document.getElementById("log-content") as HTMLDivElement;
   const placeholder = document.getElementById("log-placeholder") as HTMLParagraphElement;
 
