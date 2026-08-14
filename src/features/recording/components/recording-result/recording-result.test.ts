@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { initializeRecordingResult } from "./recording-result";
+import { createRecordingResult } from "./recording-result";
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -14,9 +14,9 @@ beforeEach(() => {
   `;
 });
 
-describe("initializeRecordingResult", () => {
+describe("createRecordingResult", () => {
   it("文字起こしを表示する", () => {
-    const result = initializeRecordingResult(vi.fn());
+    const result = createRecordingResult(vi.fn());
 
     result.showTranscript("transcript");
 
@@ -25,7 +25,7 @@ describe("initializeRecordingResult", () => {
   });
 
   it("文字起こしがない場合は議事録タブを表示する", () => {
-    const result = initializeRecordingResult(vi.fn());
+    const result = createRecordingResult(vi.fn());
 
     result.showMinutes("minutes");
 
@@ -33,7 +33,7 @@ describe("initializeRecordingResult", () => {
   });
 
   it("リセットで結果をクリアする", () => {
-    const result = initializeRecordingResult(vi.fn());
+    const result = createRecordingResult(vi.fn());
     result.showTranscript("transcript");
 
     result.reset();

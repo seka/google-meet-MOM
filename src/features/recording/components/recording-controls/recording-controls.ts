@@ -47,7 +47,7 @@ export function renderRecordingControls(
   elements.recordButton.disabled = isBusy;
 }
 
-export function initializeRecordingControls(onToggle: () => void): RecordingControls {
+export function createRecordingControls(onToggle: () => void): RecordingControls {
   const elements: RecordingControlElements = {
     recordButton: document.getElementById("record-btn") as HTMLButtonElement,
     microphoneIcon: document.getElementById("icon-mic") as HTMLElement,
