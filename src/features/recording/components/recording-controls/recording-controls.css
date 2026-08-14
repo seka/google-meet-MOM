@@ -1,8 +1,8 @@
-#status-bar {
+.status-bar {
   padding: var(--space-1) 0 var(--space-2);
 }
 
-#status-message {
+.status-message {
   font-size: var(--font-size-sm);
   color: var(--danger);
   text-align: center;
@@ -12,7 +12,7 @@
   padding: var(--space-2);
 }
 
-#record-btn.fab {
+.record-button.fab {
   padding: 0;
   font-size: inherit;
 }

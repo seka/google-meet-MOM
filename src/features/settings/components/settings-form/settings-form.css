@@ -81,7 +81,7 @@ select:focus {
   padding: var(--space-2) var(--space-6);
 }
 
-#saved-msg {
+.saved-message {
   font-size: var(--font-size-md);
   color: var(--primary);
   display: none;

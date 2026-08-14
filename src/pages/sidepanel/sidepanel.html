@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="./sidepanel.css" />
   </head>
   <body>
-    <div id="app">
+    <div id="app" class="app">
       <section class="log-section" id="log-section">
         <div class="section-header">
           <span class="section-title">発言ログ</span>
@@ -27,8 +27,8 @@
             <span id="status-label">待機中</span>
           </span>
         </div>
-        <div id="status-bar" class="hidden">
-          <p id="status-message"></p>
+        <div id="status-bar" class="status-bar hidden">
+          <p id="status-message" class="status-message"></p>
         </div>
         <div id="log-content" class="log-area">
           <p id="log-placeholder" class="placeholder">
@@ -110,7 +110,7 @@
           <circle cx="12" cy="12" r="3" />
         </svg>
       </a>
-      <button id="record-btn" class="btn btn-primary fab fab-lg">
+      <button id="record-btn" class="record-button btn btn-primary fab fab-lg">
         <svg
           id="icon-mic"
           xmlns="http://www.w3.org/2000/svg"
