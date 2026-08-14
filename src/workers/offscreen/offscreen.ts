@@ -45,11 +45,11 @@ function toErrorMessage(err: unknown): string {
 function reportOffscreenError(err: unknown, sendResponse?: (response?: unknown) => void): void {
   const msg = toErrorMessage(err);
   sendResponse?.({ ok: false, error: msg });
-  publishRuntimeError(msg);
+  publishRuntimeError(msg).catch(console.error);
 }
 
 function sendWhisperProgress(progress: number): void {
-  publishTranscriptionProgress(progress);
+  publishTranscriptionProgress(progress).catch(console.error);
 }
 
 function downloadRecordingBlob(blob: Blob, filename: string): Promise<void> {
@@ -87,7 +87,7 @@ async function processNextChunk(): Promise<void> {
       language: pendingSettings.language,
       onProgress: sendWhisperProgress,
     });
-    publishTranscriptChunk(text, Math.floor(startIdx / WINDOW));
+    await publishTranscriptChunk(text, Math.floor(startIdx / WINDOW));
   } catch {
     // 失敗した場合はカーソルを戻して次回リトライ
     processedChunkCount = startIdx;
@@ -186,7 +186,7 @@ async function stopAndTranscribe(
         }
       }
 
-      publishRecordingSaved(recordingId);
+      await publishRecordingSaved(recordingId);
 
       await transcribeAndSave(
         audioBlob,
@@ -224,10 +224,10 @@ async function transcribeAndSave(
 
     await updateRecording(recordingId, { transcript });
 
-    publishTranscriptionComplete(transcript, recordingId);
+    await publishTranscriptionComplete(transcript, recordingId);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    publishRuntimeError(`文字起こしエラー: ${msg}`);
+    await publishRuntimeError(`文字起こしエラー: ${msg}`);
   }
 }
 

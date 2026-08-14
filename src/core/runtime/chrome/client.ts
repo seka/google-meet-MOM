@@ -4,7 +4,7 @@ export type ChromeRuntimeListener = (
   sendResponse: (response?: unknown) => void,
 ) => boolean | void;
 
-export function requestChromeRuntime<Response>(payload: unknown): Promise<Response> {
+export function sendChromeRuntimeMessage<Response = void>(payload: unknown): Promise<Response> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(payload, (response: Response) => {
       if (chrome.runtime.lastError) {
@@ -17,12 +17,6 @@ export function requestChromeRuntime<Response>(payload: unknown): Promise<Respon
   });
 }
 
-export function notifyChromeRuntime(payload: unknown): void {
-  chrome.runtime.sendMessage(payload, () => {
-    void chrome.runtime.lastError;
-  });
-}
-
-export function subscribeChromeRuntime(listener: ChromeRuntimeListener): void {
+export function addChromeRuntimeMessageListener(listener: ChromeRuntimeListener): void {
   chrome.runtime.onMessage.addListener(listener);
 }

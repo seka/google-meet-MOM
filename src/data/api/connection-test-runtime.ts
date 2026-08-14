@@ -1,4 +1,8 @@
-import { requestChromeRuntime, subscribeChromeRuntime } from "@core/runtime/chrome";
+import {
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeMessage,
+} from "@core/runtime/chrome";
+import { sendRuntimeMessage } from "./runtime-error";
 
 export interface RuntimeResult {
   ok: boolean;
@@ -25,11 +29,13 @@ export function testOllamaConnection(input: {
   ollamaUrl: string;
   ollamaModel: string;
 }): Promise<RuntimeResult | null> {
-  return requestChromeRuntime<RuntimeResult | null>({
-    type: "OLLAMA_TEST",
-    target: "background",
-    payload: input,
-  });
+  return sendRuntimeMessage("Ollama接続テスト", () =>
+    sendChromeRuntimeMessage<RuntimeResult | null>({
+      type: "OLLAMA_TEST",
+      target: "background",
+      payload: input,
+    }),
+  );
 }
 
 export function testWhisperConnection(input: {
@@ -37,11 +43,13 @@ export function testWhisperConnection(input: {
   model: string;
   language: string;
 }): Promise<WhisperTestResult | null> {
-  return requestChromeRuntime<WhisperTestResult | null>({
-    type: "WHISPER_TEST",
-    target: "background",
-    payload: input,
-  });
+  return sendRuntimeMessage("Whisper接続テスト", () =>
+    sendChromeRuntimeMessage<WhisperTestResult | null>({
+      type: "WHISPER_TEST",
+      target: "background",
+      payload: input,
+    }),
+  );
 }
 
 export function testWhisperOffscreen(input: {
@@ -49,11 +57,13 @@ export function testWhisperOffscreen(input: {
   model: string;
   language: string;
 }): Promise<WhisperTestResult | null> {
-  return requestChromeRuntime<WhisperTestResult | null>({
-    type: "WHISPER_TEST",
-    target: "offscreen",
-    payload: input,
-  });
+  return sendRuntimeMessage("Offscreen Whisper接続テスト", () =>
+    sendChromeRuntimeMessage<WhisperTestResult | null>({
+      type: "WHISPER_TEST",
+      target: "offscreen",
+      payload: input,
+    }),
+  );
 }
 
 export function subscribeBackgroundConnectionTests(handlers: {
@@ -63,7 +73,7 @@ export function subscribeBackgroundConnectionTests(handlers: {
     respond: Respond,
   ): void;
 }): void {
-  subscribeChromeRuntime((message, _sender, respond) => {
+  addChromeRuntimeMessageListener((message, _sender, respond) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target === "offscreen") return false;
 
@@ -91,7 +101,7 @@ export function subscribeOffscreenConnectionTests(
     respond: Respond,
   ) => void,
 ): void {
-  subscribeChromeRuntime((message, _sender, respond) => {
+  addChromeRuntimeMessageListener((message, _sender, respond) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target !== "offscreen" || runtimePayload.type !== "WHISPER_TEST") {
       return false;

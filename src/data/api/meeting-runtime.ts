@@ -1,11 +1,11 @@
-import { subscribeChromeRuntime } from "@core/runtime/chrome";
+import { addChromeRuntimeMessageListener } from "@core/runtime/chrome";
 
 export function subscribeMeetingCommands(handlers: {
   getTitle(): { title: string };
   startSpeakerTracking(recordingStartTime: number): void;
   getSpeakerEvents(): { speakerEvents: Array<{ name: string; absoluteTime: number }> };
 }): void {
-  subscribeChromeRuntime((message, _sender, respond) => {
+  addChromeRuntimeMessageListener((message, _sender, respond) => {
     if (typeof message !== "object" || message === null) return false;
     const runtimePayload = message as { type?: string; payload?: unknown };
 

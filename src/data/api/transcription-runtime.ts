@@ -1,4 +1,8 @@
-import { notifyChromeRuntime, subscribeChromeRuntime } from "@core/runtime/chrome";
+import {
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeMessage,
+} from "@core/runtime/chrome";
+import { sendRuntimeMessage } from "./runtime-error";
 
 type Respond = (response?: unknown) => void;
 
@@ -12,32 +16,45 @@ function toRuntimePayload(message: unknown): RuntimePayload {
   return typeof message === "object" && message !== null ? (message as RuntimePayload) : {};
 }
 
-export function publishTranscriptionProgress(progress: number): void {
-  notifyChromeRuntime({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } });
+export function publishTranscriptionProgress(progress: number): Promise<void> {
+  return sendRuntimeMessage("文字起こし進捗の通知", () =>
+    sendChromeRuntimeMessage({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } }),
+  );
 }
 
-export function publishTranscriptChunk(text: string, chunkIndex: number): void {
-  notifyChromeRuntime({
-    type: "TRANSCRIPT_CHUNK",
-    target: "background",
-    payload: { text, chunkIndex },
-  });
+export function publishTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
+  return sendRuntimeMessage("文字起こしチャンクの通知", () =>
+    sendChromeRuntimeMessage({
+      type: "TRANSCRIPT_CHUNK",
+      target: "background",
+      payload: { text, chunkIndex },
+    }),
+  );
 }
 
-export function broadcastTranscriptChunk(text: string, chunkIndex: number): void {
-  notifyChromeRuntime({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } });
+export function broadcastTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
+  return sendRuntimeMessage("文字起こしチャンクの配信", () =>
+    sendChromeRuntimeMessage({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } }),
+  );
 }
 
-export function publishTranscriptionComplete(transcript: string, recordingId: string): void {
-  notifyChromeRuntime({
-    type: "TRANSCRIPTION_DONE",
-    target: "background",
-    payload: { transcript, recordingId },
-  });
+export function publishTranscriptionComplete(
+  transcript: string,
+  recordingId: string,
+): Promise<void> {
+  return sendRuntimeMessage("文字起こし完了の通知", () =>
+    sendChromeRuntimeMessage({
+      type: "TRANSCRIPTION_DONE",
+      target: "background",
+      payload: { transcript, recordingId },
+    }),
+  );
 }
 
-export function publishRuntimeError(message: string): void {
-  notifyChromeRuntime({ type: "ERROR", payload: { message } });
+export function publishRuntimeError(message: string): Promise<void> {
+  return sendRuntimeMessage("実行時エラーの通知", () =>
+    sendChromeRuntimeMessage({ type: "ERROR", payload: { message } }),
+  );
 }
 
 export function subscribeBackgroundTranscriptionEvents(handlers: {
@@ -45,7 +62,7 @@ export function subscribeBackgroundTranscriptionEvents(handlers: {
   chunk(text: string, chunkIndex: number): void;
   error(message: string): void;
 }): void {
-  subscribeChromeRuntime((message) => {
+  addChromeRuntimeMessageListener((message) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target === "offscreen") return false;
 
@@ -72,7 +89,7 @@ export function subscribeTranscriptionEvents(handlers: {
   chunk?(text: string, chunkIndex: number): void;
   completed?(transcript: string, recordingId: string): void;
 }): void {
-  subscribeChromeRuntime((message, _sender, _respond: Respond) => {
+  addChromeRuntimeMessageListener((message, _sender, _respond: Respond) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.type === "TRANSCRIPTION_PROGRESS" && handlers.progress) {
       handlers.progress((runtimePayload.payload as { progress: number }).progress);

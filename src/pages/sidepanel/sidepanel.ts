@@ -110,7 +110,12 @@ document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
 
 recordBtn.addEventListener("click", async () => {
   if (currentState === "recording") {
-    stopRecording();
+    try {
+      const result = await stopRecording();
+      if (!result?.ok) throw new Error(result?.error ?? "録音を停止できませんでした");
+    } catch (err) {
+      updateUI("error", `録音を停止できません: ${toErrorMessage(err)}`);
+    }
     return;
   }
 
@@ -149,7 +154,8 @@ recordBtn.addEventListener("click", async () => {
       chrome.storage.sync.get(DEFAULT_SETTINGS),
     ]);
 
-    startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
+    const result = await startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
+    if (!result?.ok) throw new Error(result?.error ?? "録音を開始できませんでした");
   } catch (err) {
     updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);
   }

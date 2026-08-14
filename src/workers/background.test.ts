@@ -33,8 +33,8 @@ beforeEach(() => {
   (chrome.runtime.getContexts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   (chrome.offscreen.createDocument as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
   (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-    (_msg: unknown, cb?: () => void) => {
-      cb?.();
+    (_msg: unknown, cb?: (response: unknown) => void) => {
+      cb?.({ ok: true });
     },
   );
   (chrome.tabs.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
@@ -121,8 +121,8 @@ describe("STOP_RECORDING", () => {
       },
     );
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      (_msg: unknown, cb?: () => void) => {
-        cb?.();
+      (_msg: unknown, cb?: (response: unknown) => void) => {
+        cb?.({ ok: true });
       },
     );
 

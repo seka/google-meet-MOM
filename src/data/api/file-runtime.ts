@@ -1,4 +1,8 @@
-import { requestChromeRuntime, subscribeChromeRuntime } from "@core/runtime/chrome";
+import {
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeMessage,
+} from "@core/runtime/chrome";
+import { sendRuntimeMessage } from "./runtime-error";
 
 interface DownloadResult {
   ok: boolean;
@@ -6,17 +10,19 @@ interface DownloadResult {
 }
 
 export function downloadRuntimeUrl(url: string, filename: string): Promise<DownloadResult | null> {
-  return requestChromeRuntime<DownloadResult | null>({
-    type: "DOWNLOAD_URL",
-    target: "background",
-    payload: { url, filename },
-  });
+  return sendRuntimeMessage("ファイルのダウンロード", () =>
+    sendChromeRuntimeMessage<DownloadResult | null>({
+      type: "DOWNLOAD_URL",
+      target: "background",
+      payload: { url, filename },
+    }),
+  );
 }
 
 export function subscribeRuntimeUrlDownloads(
   handler: (url: string, filename: string, respond: (response?: unknown) => void) => void,
 ): void {
-  subscribeChromeRuntime((message, _sender, respond) => {
+  addChromeRuntimeMessageListener((message, _sender, respond) => {
     if (typeof message !== "object" || message === null) return false;
     const runtimePayload = message as { type?: string; payload?: unknown };
     if (runtimePayload.type !== "DOWNLOAD_URL") return false;

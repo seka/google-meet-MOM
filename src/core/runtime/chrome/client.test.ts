@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
-  notifyChromeRuntime,
-  requestChromeRuntime,
-  subscribeChromeRuntime,
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeMessage,
   type ChromeRuntimeListener,
 } from "./client";
 
@@ -11,13 +10,13 @@ beforeEach(() => {
   (chrome.runtime as unknown as Record<string, unknown>).lastError = undefined;
 });
 
-describe("requestChromeRuntime", () => {
+describe("sendChromeRuntimeMessage", () => {
   it("Chrome Runtime のレスポンスを返す", async () => {
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
       (_payload: unknown, callback: (response: unknown) => void) => callback({ ok: true }),
     );
 
-    await expect(requestChromeRuntime({ type: "TEST" })).resolves.toEqual({ ok: true });
+    await expect(sendChromeRuntimeMessage({ type: "TEST" })).resolves.toEqual({ ok: true });
   });
 
   it("runtime.lastError を Error に変換する", async () => {
@@ -31,30 +30,17 @@ describe("requestChromeRuntime", () => {
       },
     );
 
-    await expect(requestChromeRuntime({ type: "TEST" })).rejects.toThrow("受信先がありません");
-  });
-});
-
-describe("notifyChromeRuntime", () => {
-  it("応答を待たずに payload を送信する", () => {
-    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      (_payload: unknown, callback: () => void) => callback(),
-    );
-
-    notifyChromeRuntime({ type: "TEST" });
-
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-      { type: "TEST" },
-      expect.any(Function),
+    await expect(sendChromeRuntimeMessage({ type: "TEST" })).rejects.toThrow(
+      "受信先がありません",
     );
   });
 });
 
-describe("subscribeChromeRuntime", () => {
+describe("addChromeRuntimeMessageListener", () => {
   it("listener を Chrome Runtime に登録する", () => {
     const listener: ChromeRuntimeListener = vi.fn();
 
-    subscribeChromeRuntime(listener);
+    addChromeRuntimeMessageListener(listener);
 
     expect(chrome.runtime.onMessage.addListener).toHaveBeenCalledWith(listener);
   });

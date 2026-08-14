@@ -56,7 +56,8 @@ function toRecordingStartErrorMessage(err: unknown): string {
 }
 
 function reportBackgroundError(err: unknown): void {
-  setState("error", { message: toErrorMessage(err) });
+  console.error(err);
+  setState("error", { message: toErrorMessage(err) }).catch(console.error);
 }
 
 // アイコンクリックでサイドパネルを開く
@@ -106,12 +107,12 @@ async function testWhisperWithRetry(input: {
   throw new Error("Offscreen document did not respond");
 }
 
-function setState(
+async function setState(
   state: RecordingState,
   extra: Omit<RecordingStateEvent, "state"> = {},
-): void {
+): Promise<void> {
   currentState = state;
-  publishRecordingState({ state, ...extra });
+  await publishRecordingState({ state, ...extra });
 }
 
 async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
@@ -128,7 +129,7 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
 }
 
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
-  setState("summarizing", { recordingId });
+  await setState("summarizing", { recordingId });
   if (!currentSettings) throw new Error("録音設定を取得できませんでした");
   const generatedAt = new Date().toISOString();
 
@@ -165,9 +166,9 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
       }
     }
 
-    setState("done", { recordingId, minutes });
+    await setState("done", { recordingId, minutes });
   } catch (err) {
-    setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
+    await setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
   }
 }
 
@@ -189,22 +190,28 @@ subscribeBackgroundRecordingCommands({
           );
         }
 
-        startOffscreenRecording({ ...input, recordingStartTime });
-        setState("recording");
+        const result = await startOffscreenRecording({ ...input, recordingStartTime });
+        if (!result?.ok) throw new Error(result?.error ?? "Offscreen録音を開始できませんでした");
+        await setState("recording");
         respond({ ok: true });
       } catch (err) {
         const message = toRecordingStartErrorMessage(err);
-        setState("error", { message });
+        await setState("error", { message }).catch(console.error);
         respond({ ok: false, error: message });
       }
     })().catch(reportBackgroundError);
   },
   stop(respond) {
-    setState("transcribing");
-    respond({ ok: true });
-    collectSpeakerEvents()
-      .then((speakerEvents) => stopOffscreenRecording({ speakerEvents, recordingStartTime }))
-      .catch(reportBackgroundError);
+    (async () => {
+      await setState("transcribing");
+      const speakerEvents = await collectSpeakerEvents();
+      const result = await stopOffscreenRecording({ speakerEvents, recordingStartTime });
+      if (!result?.ok) throw new Error(result?.error ?? "Offscreen録音を停止できませんでした");
+      respond({ ok: true });
+    })().catch((error: unknown) => {
+      reportBackgroundError(error);
+      respond({ ok: false, error: toErrorMessage(error) });
+    });
   },
   getState(respond) {
     respond({ state: currentState, recordingId: currentRecordingId });
@@ -222,11 +229,12 @@ subscribeBackgroundTranscriptionEvents({
       .catch(reportBackgroundError);
   },
   chunk(text, chunkIndex) {
-    broadcastTranscriptChunk(text, chunkIndex);
+    broadcastTranscriptChunk(text, chunkIndex).catch(reportBackgroundError);
   },
   error(message) {
-    setState("error", { message });
-    closeOffscreenDocument().catch(reportBackgroundError);
+    Promise.all([setState("error", { message }), closeOffscreenDocument()]).catch(
+      reportBackgroundError,
+    );
   },
 });
 

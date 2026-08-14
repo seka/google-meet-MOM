@@ -1,6 +1,5 @@
 export {
-  notifyChromeRuntime,
-  requestChromeRuntime,
-  subscribeChromeRuntime,
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeMessage,
   type ChromeRuntimeListener,
 } from "./client";
