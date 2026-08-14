@@ -12,10 +12,7 @@ import {
   broadcastTranscriptChunk,
   subscribeBackgroundTranscriptionEvents,
 } from "@data/transcription";
-import {
-  subscribeBackgroundConnectionTests,
-  testWhisperOffscreen,
-} from "@data/connection-test";
+import { subscribeBackgroundConnectionTests, testWhisperOffscreen } from "@data/connection-test";
 import { subscribeRuntimeUrlDownloads } from "@data/file-download";
 import {
   assertMinutesModelAvailable,

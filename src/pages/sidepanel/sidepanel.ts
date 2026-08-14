@@ -1,5 +1,5 @@
 import type { RecordingState } from "@features/recording/types";
-import { DEFAULT_SETTINGS } from "@features/settings/types";
+import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
 import { createRecordingLog } from "@features/recording/components/log-section/log-section";
 import { createRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
 import { createRecordingResult } from "@features/recording/components/recording-result/recording-result";
@@ -82,10 +82,11 @@ async function toggleRecording(): Promise<void> {
       // content script が応答しない場合はスキップ
     }
 
-    const [streamId, settings] = await Promise.all([
+    const [streamId, storedSettings] = await Promise.all([
       streamIdPromise,
       chrome.storage.sync.get(DEFAULT_SETTINGS),
     ]);
+    const settings = storedSettings as ExtensionSettings;
 
     const result = await startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
     if (!result?.ok) throw new Error(result?.error ?? "録音を開始できませんでした");

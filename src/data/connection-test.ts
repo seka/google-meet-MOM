@@ -1,7 +1,4 @@
-import {
-  addChromeRuntimeMessageListener,
-  sendChromeRuntimeMessage,
-} from "@core/runtime/chrome";
+import { addChromeRuntimeMessageListener, sendChromeRuntimeMessage } from "@core/runtime/chrome";
 import { withDataCommunicationError } from "./error";
 
 export interface RuntimeResult {

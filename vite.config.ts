@@ -25,10 +25,10 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    ignorePatterns: ["public/vendor/**", "public/models/**"],
+    ignorePatterns: [".git_worktrees/**", "public/vendor/**", "public/models/**"],
   },
   lint: {
-    ignorePatterns: ["public/vendor/**", "public/models/**"],
+    ignorePatterns: [".git_worktrees/**", "public/vendor/**", "public/models/**"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },

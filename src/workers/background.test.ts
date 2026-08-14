@@ -149,11 +149,7 @@ describe("STOP_RECORDING", () => {
 describe("GET_STATE", () => {
   it("現在の状態を同期で返す", () => {
     const sendResponse = vi.fn();
-    bgHandler(
-      { type: "GET_STATE" },
-      {} as chrome.runtime.MessageSender,
-      sendResponse,
-    );
+    bgHandler({ type: "GET_STATE" }, {} as chrome.runtime.MessageSender, sendResponse);
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({ state: expect.any(String) }),
     );
