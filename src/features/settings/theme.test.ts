@@ -39,7 +39,10 @@ describe("applyAppearance", () => {
 
 describe("loadAndApplyAppearance", () => {
   it("sync storageからテーマを読み込んで適用する", async () => {
-    vi.mocked(chrome.storage.sync.get).mockResolvedValue({ appearance: "dark" });
+    const syncStorage = chrome.storage.sync as unknown as {
+      get: ReturnType<typeof vi.fn>;
+    };
+    syncStorage.get.mockResolvedValue({ appearance: "dark" });
 
     await loadAndApplyAppearance();
 
@@ -49,11 +52,15 @@ describe("loadAndApplyAppearance", () => {
 
 describe("subscribeAppearanceChanges", () => {
   it("購読解除関数でlistenerを削除する", () => {
+    const onChanged = chrome.storage.onChanged as unknown as {
+      addListener: ReturnType<typeof vi.fn>;
+      removeListener: ReturnType<typeof vi.fn>;
+    };
     const unsubscribe = subscribeAppearanceChanges();
-    const listener = vi.mocked(chrome.storage.onChanged.addListener).mock.calls[0]?.[0];
+    const listener = onChanged.addListener.mock.calls[0]?.[0];
 
     unsubscribe();
 
-    expect(chrome.storage.onChanged.removeListener).toHaveBeenCalledWith(listener);
+    expect(onChanged.removeListener).toHaveBeenCalledWith(listener);
   });
 });

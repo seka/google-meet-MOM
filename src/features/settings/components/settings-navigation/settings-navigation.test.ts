@@ -21,12 +21,7 @@ describe("showSettingsScreen", () => {
   });
 
   it("対象のナビゲーションと画面をactiveにする", () => {
-    showSettingsScreen(
-      [generalNav, aboutNav],
-      [generalScreen, aboutScreen],
-      saveRow,
-      "general",
-    );
+    showSettingsScreen([generalNav, aboutNav], [generalScreen, aboutScreen], saveRow, "general");
 
     expect(generalNav.classList.contains("active")).toBe(true);
     expect(aboutNav.classList.contains("active")).toBe(false);
@@ -35,12 +30,7 @@ describe("showSettingsScreen", () => {
   });
 
   it("about画面で保存行を非表示にする", () => {
-    showSettingsScreen(
-      [generalNav, aboutNav],
-      [generalScreen, aboutScreen],
-      saveRow,
-      "about",
-    );
+    showSettingsScreen([generalNav, aboutNav], [generalScreen, aboutScreen], saveRow, "about");
 
     expect(saveRow.hidden).toBe(true);
   });

@@ -1,8 +1,5 @@
 import { DEFAULT_SETTINGS } from "../../types";
-import {
-  testOllamaConnection,
-  testWhisperConnection,
-} from "@data/connection-test";
+import { testOllamaConnection, testWhisperConnection } from "@data/connection-test";
 import { subscribeTranscriptionEvents } from "@data/transcription";
 
 interface RecordingSession {

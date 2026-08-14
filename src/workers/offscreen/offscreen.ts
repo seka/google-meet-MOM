@@ -1,8 +1,5 @@
 import { saveRecording, updateRecording } from "../../db";
-import {
-  publishRecordingSaved,
-  subscribeOffscreenRecordingCommands,
-} from "@data/recording";
+import { publishRecordingSaved, subscribeOffscreenRecordingCommands } from "@data/recording";
 import {
   publishRuntimeError,
   publishTranscriptChunk,

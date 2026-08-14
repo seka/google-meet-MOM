@@ -18,9 +18,9 @@ vi.stubGlobal("chrome", {
     onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
   },
   downloads: { download: vi.fn() },
-  sidePanel: { setPanelBehavior: vi.fn() },
+  sidePanel: { setPanelBehavior: vi.fn().mockResolvedValue(undefined) },
   alarms: {
-    create: vi.fn(),
+    create: vi.fn().mockResolvedValue(undefined),
     onAlarm: { addListener: vi.fn() },
   },
   offscreen: {

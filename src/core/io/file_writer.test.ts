@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import {
-  buildMinutesMarkdown,
-  buildOutputFilename,
-  downloadTextFile,
-} from "./file_writer";
+import { buildMinutesMarkdown, buildOutputFilename, downloadTextFile } from "./file_writer";
 
 beforeEach(() => {
   vi.clearAllMocks();
