@@ -4,15 +4,18 @@ import { initializeRecordingLog } from "@features/recording/components/log-secti
 import { initializeRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
 import { initializeRecordingResult } from "@features/recording/components/recording-result/recording-result";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
+import {
+  getRecordingState,
+  startRecording,
+  stopRecording,
+  subscribeRecordingStateChanged,
+} from "@data/recording";
+import { subscribeTranscriptionEvents } from "@data/transcription";
 
 let currentState: RecordingState = "idle";
 
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
-}
-
-function ignoreOptionalMessageError(): void {
-  void chrome.runtime.lastError;
 }
 
 function chooseTabMediaStreamId(): Promise<string> {
@@ -42,10 +45,12 @@ function updateUI(state: RecordingState, message = ""): void {
 
 async function toggleRecording(): Promise<void> {
   if (currentState === "recording") {
-    chrome.runtime.sendMessage(
-      { type: "STOP_RECORDING", target: "background" },
-      ignoreOptionalMessageError,
-    );
+    try {
+      const result = await stopRecording();
+      if (!result?.ok) throw new Error(result?.error ?? "録音を停止できませんでした");
+    } catch (err) {
+      updateUI("error", `録音を停止できません: ${toErrorMessage(err)}`);
+    }
     return;
   }
 
@@ -82,14 +87,8 @@ async function toggleRecording(): Promise<void> {
       chrome.storage.sync.get(DEFAULT_SETTINGS),
     ]);
 
-    chrome.runtime.sendMessage(
-      {
-        type: "START_RECORDING",
-        target: "background",
-        payload: { streamId, meetingTitle, settings, tabId: meetTab.id },
-      },
-      ignoreOptionalMessageError,
-    );
+    const result = await startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
+    if (!result?.ok) throw new Error(result?.error ?? "録音を開始できませんでした");
   } catch (err) {
     updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);
   }
@@ -109,39 +108,28 @@ openOptions.addEventListener("click", (e) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
-  if (message.type === "TRANSCRIPT_CHUNK") {
-    const { text } = message.payload as { text: string; chunkIndex: number };
+subscribeTranscriptionEvents({
+  chunk(text) {
     recordingLog.append(text);
-  }
-
-  if (message.type === "STATE_CHANGED") {
-    const {
-      state,
-      minutes,
-      message: msg,
-    } = message.payload as {
-      state: RecordingState;
-      minutes?: string;
-      message?: string;
-    };
-
-    updateUI(state, msg ?? "");
-
-    if (state === "done" && minutes) {
-      recordingResult.showMinutes(minutes);
-    }
-  }
-
-  if (message.type === "TRANSCRIPTION_DONE") {
-    const { transcript } = (message as { payload: { transcript: string } }).payload;
+  },
+  completed(transcript) {
     recordingResult.showTranscript(transcript);
+  },
+});
+
+subscribeRecordingStateChanged(({ state, minutes, message }) => {
+  updateUI(state, message ?? "");
+
+  if (state === "done" && minutes) {
+    recordingResult.showMinutes(minutes);
   }
 });
 
-chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState } | null) => {
-  if (res) updateUI(res.state);
-});
+getRecordingState()
+  .then((response) => {
+    if (response) updateUI(response.state);
+  })
+  .catch(() => {});
 
 subscribeAppearanceChanges();
 loadAndApplyAppearance().catch((err: unknown) => {
