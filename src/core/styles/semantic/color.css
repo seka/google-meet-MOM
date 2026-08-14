@@ -12,6 +12,7 @@ html[data-theme="light"] {
   --warning: var(--primitive-color-amber-500);
   --surface: var(--primitive-color-white);
   --surface-subtle: var(--primitive-color-slate-75);
+  --status-neutral-surface: var(--primitive-color-slate-70);
   --bg: var(--primitive-color-slate-50);
   --border: var(--primitive-color-slate-200);
   --border-strong: var(--primitive-color-slate-300);
@@ -35,6 +36,7 @@ html[data-theme="dark"] {
   --warning: var(--primitive-color-amber-500);
   --surface: var(--primitive-color-slate-850);
   --surface-subtle: var(--primitive-color-slate-800);
+  --status-neutral-surface: var(--primitive-color-slate-750);
   --bg: var(--primitive-color-slate-950);
   --border: var(--primitive-color-slate-700);
   --border-strong: var(--primitive-color-slate-600);
@@ -59,6 +61,7 @@ html[data-theme="dark"] {
     --warning: var(--primitive-color-amber-500);
     --surface: var(--primitive-color-slate-850);
     --surface-subtle: var(--primitive-color-slate-800);
+    --status-neutral-surface: var(--primitive-color-slate-750);
     --bg: var(--primitive-color-slate-950);
     --border: var(--primitive-color-slate-700);
     --border-strong: var(--primitive-color-slate-600);

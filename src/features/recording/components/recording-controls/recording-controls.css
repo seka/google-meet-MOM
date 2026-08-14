@@ -1,0 +1,36 @@
+.status-bar {
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.status-message {
+  font-size: var(--font-size-sm);
+  color: var(--danger);
+  text-align: center;
+  background: var(--danger-surface);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
+
+.record-button.fab {
+  padding: 0;
+  font-size: inherit;
+}
+
+.badge-idle,
+.badge-done {
+  background: var(--status-neutral-surface);
+  color: var(--primary);
+}
+
+.badge-summarizing {
+  background: var(--primary);
+}
+
+.btn-primary {
+  background: var(--action);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--action-hover);
+}

@@ -70,3 +70,12 @@
 .actions .btn {
   flex: 1;
 }
+
+.btn-secondary {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-subtle);
+}

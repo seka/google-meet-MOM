@@ -2,9 +2,10 @@
 @import "@core/components/atoms/button.css";
 @import "@core/components/atoms/badge.css";
 @import "@core/components/atoms/icon.css";
-@import "@core/components/organisms/log-section.css";
-@import "@core/components/organisms/result-section.css";
-@import "@features/recording/components/log-item.css";
+@import "@features/recording/components/log-section/log-section.css";
+@import "@features/recording/components/log-item/log-item.css";
+@import "@features/recording/components/recording-controls/recording-controls.css";
+@import "@features/recording/components/recording-result/recording-result.css";
 
 * {
   box-sizing: border-box;
@@ -26,25 +27,11 @@ body {
   color: var(--text);
 }
 
-#app {
+.app {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-#status-bar {
-  padding: var(--space-1) 0 var(--space-2);
-}
-
-#status-message {
-  font-size: var(--font-size-sm);
-  color: var(--danger);
-  text-align: center;
-  background: var(--danger-surface);
-  border: 1px solid var(--danger-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-2);
 }
 
 .fab-bar {
@@ -107,109 +94,4 @@ body {
 
 .fab-sm:active {
   transform: scale(0.93);
-}
-
-#record-btn.fab {
-  padding: 0;
-  font-size: inherit;
-}
-
-.log-area {
-  background: var(--surface);
-  border-color: var(--border);
-}
-
-.log-chunk {
-  background: var(--surface-subtle);
-  border-left-color: var(--primary);
-}
-
-.tabs {
-  border-bottom-color: var(--border);
-}
-
-.tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-}
-
-.tab-content pre {
-  border-color: var(--border);
-}
-
-.badge-idle,
-.badge-done {
-  background: var(--surface-subtle);
-  color: var(--primary);
-}
-
-.badge-summarizing {
-  background: var(--primary);
-}
-
-.btn-secondary {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: var(--surface-subtle);
-}
-
-.btn-primary {
-  background: var(--action);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--action-hover);
-}
-
-html[data-theme="dark"] #status-message {
-  background: var(--danger-surface);
-  border-color: var(--danger-border);
-}
-
-html[data-theme="dark"] .fab-sm:hover,
-html[data-theme="dark"] .log-chunk,
-html[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
-  background: var(--surface-subtle);
-}
-
-html[data-theme="dark"] .badge-idle,
-html[data-theme="dark"] .badge-done {
-  background: var(--surface-subtle);
-}
-
-html[data-theme="dark"] .btn-primary {
-  background: var(--action);
-}
-
-html[data-theme="dark"] .btn-primary:hover:not(:disabled) {
-  background: var(--action-hover);
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme]) #status-message {
-    background: var(--danger-surface);
-    border-color: var(--danger-border);
-  }
-
-  html:not([data-theme]) .fab-sm:hover,
-  html:not([data-theme]) .log-chunk,
-  html:not([data-theme]) .btn-secondary:hover:not(:disabled) {
-    background: var(--surface-subtle);
-  }
-
-  html:not([data-theme]) .badge-idle,
-  html:not([data-theme]) .badge-done {
-    background: var(--surface-subtle);
-  }
-
-  html:not([data-theme]) .btn-primary {
-    background: var(--action);
-  }
-
-  html:not([data-theme]) .btn-primary:hover:not(:disabled) {
-    background: var(--action-hover);
-  }
 }
