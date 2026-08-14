@@ -2,7 +2,7 @@ import {
   addChromeRuntimeMessageListener,
   sendChromeRuntimeMessage,
 } from "@core/runtime/chrome";
-import { sendRuntimeMessage } from "./runtime-error";
+import { withDataCommunicationError } from "./error";
 
 export interface RuntimeResult {
   ok: boolean;
@@ -29,7 +29,7 @@ export function testOllamaConnection(input: {
   ollamaUrl: string;
   ollamaModel: string;
 }): Promise<RuntimeResult | null> {
-  return sendRuntimeMessage("Ollama接続テスト", () =>
+  return withDataCommunicationError("Ollama接続テスト", () =>
     sendChromeRuntimeMessage<RuntimeResult | null>({
       type: "OLLAMA_TEST",
       target: "background",
@@ -43,7 +43,7 @@ export function testWhisperConnection(input: {
   model: string;
   language: string;
 }): Promise<WhisperTestResult | null> {
-  return sendRuntimeMessage("Whisper接続テスト", () =>
+  return withDataCommunicationError("Whisper接続テスト", () =>
     sendChromeRuntimeMessage<WhisperTestResult | null>({
       type: "WHISPER_TEST",
       target: "background",
@@ -57,7 +57,7 @@ export function testWhisperOffscreen(input: {
   model: string;
   language: string;
 }): Promise<WhisperTestResult | null> {
-  return sendRuntimeMessage("Offscreen Whisper接続テスト", () =>
+  return withDataCommunicationError("Offscreen Whisper接続テスト", () =>
     sendChromeRuntimeMessage<WhisperTestResult | null>({
       type: "WHISPER_TEST",
       target: "offscreen",

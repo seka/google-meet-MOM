@@ -2,7 +2,7 @@ import {
   addChromeRuntimeMessageListener,
   sendChromeRuntimeMessage,
 } from "@core/runtime/chrome";
-import { sendRuntimeMessage } from "./runtime-error";
+import { withDataCommunicationError } from "./error";
 
 type Respond = (response?: unknown) => void;
 
@@ -17,13 +17,13 @@ function toRuntimePayload(message: unknown): RuntimePayload {
 }
 
 export function publishTranscriptionProgress(progress: number): Promise<void> {
-  return sendRuntimeMessage("文字起こし進捗の通知", () =>
+  return withDataCommunicationError("文字起こし進捗の通知", () =>
     sendChromeRuntimeMessage({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } }),
   );
 }
 
 export function publishTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
-  return sendRuntimeMessage("文字起こしチャンクの通知", () =>
+  return withDataCommunicationError("文字起こしチャンクの通知", () =>
     sendChromeRuntimeMessage({
       type: "TRANSCRIPT_CHUNK",
       target: "background",
@@ -33,7 +33,7 @@ export function publishTranscriptChunk(text: string, chunkIndex: number): Promis
 }
 
 export function broadcastTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
-  return sendRuntimeMessage("文字起こしチャンクの配信", () =>
+  return withDataCommunicationError("文字起こしチャンクの配信", () =>
     sendChromeRuntimeMessage({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } }),
   );
 }
@@ -42,7 +42,7 @@ export function publishTranscriptionComplete(
   transcript: string,
   recordingId: string,
 ): Promise<void> {
-  return sendRuntimeMessage("文字起こし完了の通知", () =>
+  return withDataCommunicationError("文字起こし完了の通知", () =>
     sendChromeRuntimeMessage({
       type: "TRANSCRIPTION_DONE",
       target: "background",
@@ -52,7 +52,7 @@ export function publishTranscriptionComplete(
 }
 
 export function publishRuntimeError(message: string): Promise<void> {
-  return sendRuntimeMessage("実行時エラーの通知", () =>
+  return withDataCommunicationError("実行時エラーの通知", () =>
     sendChromeRuntimeMessage({ type: "ERROR", payload: { message } }),
   );
 }

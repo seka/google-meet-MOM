@@ -1,4 +1,4 @@
-import { OllamaClient, toOllamaErrorMessage } from "../../core/api/ollama/client";
+import { OllamaClient, toOllamaErrorMessage } from "../core/api/ollama/client";
 
 export async function assertMinutesModelAvailable(
   ollamaUrl: string,

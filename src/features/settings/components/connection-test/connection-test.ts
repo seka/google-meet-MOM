@@ -2,8 +2,8 @@ import { DEFAULT_SETTINGS } from "../../types";
 import {
   testOllamaConnection,
   testWhisperConnection,
-} from "@data/api/connection-test-runtime";
-import { subscribeTranscriptionEvents } from "@data/api/transcription-runtime";
+} from "@data/connection-test";
+import { subscribeTranscriptionEvents } from "@data/transcription";
 
 interface RecordingSession {
   audioCtx: AudioContext;

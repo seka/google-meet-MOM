@@ -2,7 +2,7 @@ import {
   addChromeRuntimeMessageListener,
   sendChromeRuntimeMessage,
 } from "@core/runtime/chrome";
-import { sendRuntimeMessage } from "./runtime-error";
+import { withDataCommunicationError } from "./error";
 
 export type RuntimeRecordingState =
   | "idle"
@@ -73,7 +73,7 @@ function toRuntimePayload(message: unknown): RuntimePayload {
 }
 
 export function startRecording(input: StartRecordingInput): Promise<RuntimeResult | null> {
-  return sendRuntimeMessage("録音の開始", () =>
+  return withDataCommunicationError("録音の開始", () =>
     sendChromeRuntimeMessage<RuntimeResult | null>({
       type: "START_RECORDING",
       target: "background",
@@ -83,7 +83,7 @@ export function startRecording(input: StartRecordingInput): Promise<RuntimeResul
 }
 
 export function stopRecording(): Promise<RuntimeResult | null> {
-  return sendRuntimeMessage("録音の停止", () =>
+  return withDataCommunicationError("録音の停止", () =>
     sendChromeRuntimeMessage<RuntimeResult | null>({
       type: "STOP_RECORDING",
       target: "background",
@@ -92,13 +92,13 @@ export function stopRecording(): Promise<RuntimeResult | null> {
 }
 
 export function getRecordingState(): Promise<RecordingStateSnapshot | null> {
-  return sendRuntimeMessage("録音状態の取得", () =>
+  return withDataCommunicationError("録音状態の取得", () =>
     sendChromeRuntimeMessage<RecordingStateSnapshot | null>({ type: "GET_STATE" }),
   );
 }
 
 export function publishRecordingState(event: RecordingStateEvent): Promise<void> {
-  return sendRuntimeMessage("録音状態の通知", () =>
+  return withDataCommunicationError("録音状態の通知", () =>
     sendChromeRuntimeMessage({ type: "STATE_CHANGED", payload: event }),
   );
 }
@@ -106,7 +106,7 @@ export function publishRecordingState(event: RecordingStateEvent): Promise<void>
 export function startOffscreenRecording(
   input: StartOffscreenRecordingInput,
 ): Promise<RuntimeResult | null> {
-  return sendRuntimeMessage("Offscreen録音の開始", () =>
+  return withDataCommunicationError("Offscreen録音の開始", () =>
     sendChromeRuntimeMessage<RuntimeResult | null>({
       type: "FORWARD_TO_OFFSCREEN",
       target: "offscreen",
@@ -118,7 +118,7 @@ export function startOffscreenRecording(
 export function stopOffscreenRecording(
   input: StopOffscreenRecordingInput,
 ): Promise<RuntimeResult | null> {
-  return sendRuntimeMessage("Offscreen録音の停止", () =>
+  return withDataCommunicationError("Offscreen録音の停止", () =>
     sendChromeRuntimeMessage<RuntimeResult | null>({
       type: "OFFSCREEN_STOP",
       target: "offscreen",
@@ -128,7 +128,7 @@ export function stopOffscreenRecording(
 }
 
 export function publishRecordingSaved(recordingId: string): Promise<void> {
-  return sendRuntimeMessage("録音保存の通知", () =>
+  return withDataCommunicationError("録音保存の通知", () =>
     sendChromeRuntimeMessage({
       type: "RECORDING_SAVED",
       target: "background",

@@ -7,21 +7,21 @@ import {
   stopOffscreenRecording,
   subscribeBackgroundRecordingCommands,
   type RecordingStateEvent,
-} from "@data/api/recording-runtime";
+} from "@data/recording";
 import {
   broadcastTranscriptChunk,
   subscribeBackgroundTranscriptionEvents,
-} from "@data/api/transcription-runtime";
+} from "@data/transcription";
 import {
   subscribeBackgroundConnectionTests,
   testWhisperOffscreen,
-} from "@data/api/connection-test-runtime";
-import { subscribeRuntimeUrlDownloads } from "@data/api/file-runtime";
+} from "@data/connection-test";
+import { subscribeRuntimeUrlDownloads } from "@data/file-download";
 import {
   assertMinutesModelAvailable,
   generateMinutes,
   toMinutesErrorMessage,
-} from "../data/api/minutes";
+} from "../data/minutes";
 import {
   buildMinutesMarkdown,
   buildOutputFilename,

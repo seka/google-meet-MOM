@@ -4,7 +4,7 @@ import {
   type WhisperProgressHandler,
   type WhisperRuntimeOptions,
   type WhisperTranscription,
-} from "../../core/api/whisper/client";
+} from "../core/api/whisper/client";
 
 export type AsrProgressHandler = WhisperProgressHandler;
 export type AsrTranscription = WhisperTranscription;

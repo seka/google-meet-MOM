@@ -7,8 +7,8 @@ import {
   startRecording,
   stopRecording,
   subscribeRecordingStateChanged,
-} from "@data/api/recording-runtime";
-import { subscribeTranscriptionEvents } from "@data/api/transcription-runtime";
+} from "@data/recording";
+import { subscribeTranscriptionEvents } from "@data/transcription";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;

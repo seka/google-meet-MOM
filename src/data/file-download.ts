@@ -2,7 +2,7 @@ import {
   addChromeRuntimeMessageListener,
   sendChromeRuntimeMessage,
 } from "@core/runtime/chrome";
-import { sendRuntimeMessage } from "./runtime-error";
+import { withDataCommunicationError } from "./error";
 
 interface DownloadResult {
   ok: boolean;
@@ -10,7 +10,7 @@ interface DownloadResult {
 }
 
 export function downloadRuntimeUrl(url: string, filename: string): Promise<DownloadResult | null> {
-  return sendRuntimeMessage("ファイルのダウンロード", () =>
+  return withDataCommunicationError("ファイルのダウンロード", () =>
     sendChromeRuntimeMessage<DownloadResult | null>({
       type: "DOWNLOAD_URL",
       target: "background",

@@ -1,5 +1,5 @@
 import type { SpeakerEvent } from "@features/recording/types";
-import { subscribeMeetingCommands } from "@data/api/meeting-runtime";
+import { subscribeMeetingCommands } from "@data/meeting";
 
 export function getMeetingTitle(): string {
   const selectors = ["[data-meeting-title]", 'c-wiz [jsname="r4nke"]', '[jsname="ZaFQO"]'];

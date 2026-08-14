@@ -2,15 +2,15 @@ import { saveRecording, updateRecording } from "../../db";
 import {
   publishRecordingSaved,
   subscribeOffscreenRecordingCommands,
-} from "@data/api/recording-runtime";
+} from "@data/recording";
 import {
   publishRuntimeError,
   publishTranscriptChunk,
   publishTranscriptionComplete,
   publishTranscriptionProgress,
-} from "@data/api/transcription-runtime";
-import { subscribeOffscreenConnectionTests } from "@data/api/connection-test-runtime";
-import { downloadRuntimeUrl } from "@data/api/file-runtime";
+} from "@data/transcription";
+import { subscribeOffscreenConnectionTests } from "@data/connection-test";
+import { downloadRuntimeUrl } from "@data/file-download";
 import type { SpeakerEvent } from "@features/recording/types";
 import type { ExtensionSettings } from "@features/settings/types";
 import {
@@ -18,7 +18,7 @@ import {
   transcribe,
   transcribeChunk,
   transcribeSamples,
-} from "../../data/api/asr";
+} from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
 
