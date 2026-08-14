@@ -1,12 +1,27 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
 import type { ExtensionSettings } from "@features/settings/types";
 import { updateRecording } from "../db";
-import type { ExtensionMessage } from "../messages";
+import {
+  publishRecordingState,
+  startOffscreenRecording,
+  stopOffscreenRecording,
+  subscribeBackgroundRecordingCommands,
+  type RecordingStateEvent,
+} from "@data/recording";
+import {
+  broadcastTranscriptChunk,
+  subscribeBackgroundTranscriptionEvents,
+} from "@data/transcription";
+import {
+  subscribeBackgroundConnectionTests,
+  testWhisperOffscreen,
+} from "@data/connection-test";
+import { subscribeRuntimeUrlDownloads } from "@data/file-download";
 import {
   assertMinutesModelAvailable,
   generateMinutes,
   toMinutesErrorMessage,
-} from "../data/api/minutes";
+} from "../data/minutes";
 import {
   buildMinutesMarkdown,
   buildOutputFilename,
@@ -25,12 +40,24 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function ignoreOptionalMessageError(): void {
-  void chrome.runtime.lastError;
+function toRecordingStartErrorMessage(err: unknown): string {
+  const message = toErrorMessage(err);
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    normalizedMessage.includes("extension has not been invoked") ||
+    normalizedMessage.includes("activetab") ||
+    normalizedMessage.includes("chrome pages cannot be captured")
+  ) {
+    return "録音対象タブをキャプチャできません。Google Meet のタブを選択した状態で拡張機能アイコンからサイドパネルを開き直して、もう一度開始してください。chrome:// などの Chrome 内部ページは録音できません。";
+  }
+
+  return message;
 }
 
 function reportBackgroundError(err: unknown): void {
-  setState("error", { message: toErrorMessage(err) });
+  console.error(err);
+  setState("error", { message: toErrorMessage(err) }).catch(console.error);
 }
 
 // アイコンクリックでサイドパネルを開く
@@ -61,20 +88,16 @@ async function closeOffscreenDocument(): Promise<void> {
   await chrome.offscreen.closeDocument();
 }
 
-async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknown> {
+async function testWhisperWithRetry(input: {
+  audioSamples: number[];
+  model: string;
+  language: string;
+}): Promise<unknown> {
   const attempts = 3;
 
   for (let i = 0; i < attempts; i++) {
     try {
-      return await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, (result: unknown) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          resolve(result);
-        });
-      });
+      return await testWhisperOffscreen(input);
     } catch (err) {
       if (i === attempts - 1) throw err;
       await new Promise<void>((resolve) => setTimeout(resolve, 200));
@@ -84,15 +107,12 @@ async function sendMessageToOffscreen(message: ExtensionMessage): Promise<unknow
   throw new Error("Offscreen document did not respond");
 }
 
-function setState(state: RecordingState, extra: Record<string, unknown> = {}): void {
+async function setState(
+  state: RecordingState,
+  extra: Omit<RecordingStateEvent, "state"> = {},
+): Promise<void> {
   currentState = state;
-  chrome.runtime.sendMessage(
-    {
-      type: "STATE_CHANGED",
-      payload: { state, ...extra },
-    },
-    ignoreOptionalMessageError,
-  );
+  await publishRecordingState({ state, ...extra });
 }
 
 async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
@@ -109,7 +129,7 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
 }
 
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
-  setState("summarizing", { recordingId });
+  await setState("summarizing", { recordingId });
   if (!currentSettings) throw new Error("録音設定を取得できませんでした");
   const generatedAt = new Date().toISOString();
 
@@ -146,155 +166,105 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
       }
     }
 
-    setState("done", { recordingId, minutes });
+    await setState("done", { recordingId, minutes });
   } catch (err) {
-    setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
+    await setState("error", { message: `議事録生成エラー: ${toMinutesErrorMessage(err)}` });
   }
 }
 
-chrome.runtime.onMessage.addListener(
-  (
-    message: ExtensionMessage,
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: unknown) => void,
-  ) => {
-    if (message.target !== "background" && message.type !== "GET_STATE") return false;
-
+subscribeBackgroundRecordingCommands({
+  start(input, respond) {
     (async () => {
-      switch (message.type) {
-        case "START_RECORDING": {
-          try {
-            await ensureOffscreenDocument();
+      try {
+        await ensureOffscreenDocument();
+        recordingStartTime = Date.now();
+        meetTabId = input.tabId;
+        currentMeetingTitle = input.meetingTitle;
+        currentSettings = input.settings;
 
-            recordingStartTime = Date.now();
-            meetTabId = message.payload.tabId ?? null;
-            currentMeetingTitle = message.payload.meetingTitle;
-            currentSettings = message.payload.settings;
-
-            // content script に話者追跡を開始させる
-            if (meetTabId) {
-              chrome.tabs.sendMessage(
-                meetTabId,
-                { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
-                ignoreOptionalMessageError,
-              );
-            }
-
-            chrome.runtime.sendMessage(
-              {
-                type: "FORWARD_TO_OFFSCREEN",
-                target: "offscreen",
-                payload: { ...message.payload, recordingStartTime },
-              },
-              ignoreOptionalMessageError,
-            );
-            setState("recording");
-            sendResponse({ ok: true });
-          } catch (err) {
-            const msg = toErrorMessage(err);
-            setState("error", { message: msg });
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
-        }
-
-        case "STOP_RECORDING": {
-          setState("transcribing");
-          sendResponse({ ok: true });
-
-          // content から話者イベントを収集してから offscreen に渡す
-          const speakerEvents = await collectSpeakerEvents();
-          chrome.runtime.sendMessage(
-            {
-              type: "OFFSCREEN_STOP",
-              target: "offscreen",
-              payload: { speakerEvents, recordingStartTime },
-            },
-            ignoreOptionalMessageError,
+        if (meetTabId) {
+          chrome.tabs.sendMessage(
+            meetTabId,
+            { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
+            () => {},
           );
-          break;
         }
 
-        case "GET_STATE": {
-          sendResponse({ state: currentState, recordingId: currentRecordingId });
-          break;
-        }
-
-        case "RECORDING_SAVED": {
-          currentRecordingId = message.payload.recordingId;
-          break;
-        }
-
-        case "TRANSCRIPTION_DONE": {
-          const { transcript, recordingId } = message.payload;
-          currentRecordingId = recordingId;
-          await generateAndSaveMinutes(transcript, recordingId);
-          await closeOffscreenDocument();
-          break;
-        }
-
-        case "TRANSCRIPT_CHUNK": {
-          // サイドパネルへ中継（target なしで全拡張ページにブロードキャスト）
-          chrome.runtime.sendMessage(
-            { type: "TRANSCRIPT_CHUNK", payload: message.payload },
-            ignoreOptionalMessageError,
-          );
-          break;
-        }
-
-        case "ERROR": {
-          setState("error", { message: message.payload.message });
-          await closeOffscreenDocument();
-          break;
-        }
-
-        case "WHISPER_TEST": {
-          if (currentState !== "idle" && currentState !== "done" && currentState !== "error") {
-            sendResponse({ ok: false, error: "録音中はテストできません" });
-            break;
-          }
-          try {
-            await ensureOffscreenDocument();
-            const result = await sendMessageToOffscreen({
-              type: "WHISPER_TEST",
-              target: "offscreen",
-              payload: message.payload,
-            });
-            sendResponse(result);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            sendResponse({ ok: false, error: `Offscreen 通信エラー: ${msg}` });
-          }
-          break;
-        }
-
-        case "OLLAMA_TEST": {
-          try {
-            await assertMinutesModelAvailable(
-              message.payload.ollamaUrl,
-              message.payload.ollamaModel,
-            );
-            sendResponse({ ok: true });
-          } catch (err) {
-            const msg = toMinutesErrorMessage(err);
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
-        }
-
-        case "DOWNLOAD_URL": {
-          try {
-            await downloadUrlFile(message.payload.url, message.payload.filename);
-            sendResponse({ ok: true });
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
-        }
+        const result = await startOffscreenRecording({ ...input, recordingStartTime });
+        if (!result?.ok) throw new Error(result?.error ?? "Offscreen録音を開始できませんでした");
+        await setState("recording");
+        respond({ ok: true });
+      } catch (err) {
+        const message = toRecordingStartErrorMessage(err);
+        await setState("error", { message }).catch(console.error);
+        respond({ ok: false, error: message });
       }
     })().catch(reportBackgroundError);
-
-    return true;
   },
-);
+  stop(respond) {
+    (async () => {
+      await setState("transcribing");
+      const speakerEvents = await collectSpeakerEvents();
+      const result = await stopOffscreenRecording({ speakerEvents, recordingStartTime });
+      if (!result?.ok) throw new Error(result?.error ?? "Offscreen録音を停止できませんでした");
+      respond({ ok: true });
+    })().catch((error: unknown) => {
+      reportBackgroundError(error);
+      respond({ ok: false, error: toErrorMessage(error) });
+    });
+  },
+  getState(respond) {
+    respond({ state: currentState, recordingId: currentRecordingId });
+  },
+  recordingSaved(recordingId) {
+    currentRecordingId = recordingId;
+  },
+});
+
+subscribeBackgroundTranscriptionEvents({
+  completed(transcript, recordingId) {
+    currentRecordingId = recordingId;
+    generateAndSaveMinutes(transcript, recordingId)
+      .then(closeOffscreenDocument)
+      .catch(reportBackgroundError);
+  },
+  chunk(text, chunkIndex) {
+    broadcastTranscriptChunk(text, chunkIndex).catch(reportBackgroundError);
+  },
+  error(message) {
+    Promise.all([setState("error", { message }), closeOffscreenDocument()]).catch(
+      reportBackgroundError,
+    );
+  },
+});
+
+subscribeBackgroundConnectionTests({
+  ollama({ ollamaUrl, ollamaModel }, respond) {
+    assertMinutesModelAvailable(ollamaUrl, ollamaModel)
+      .then(() => respond({ ok: true }))
+      .catch((err: unknown) => respond({ ok: false, error: toMinutesErrorMessage(err) }));
+  },
+  whisper(input, respond) {
+    if (currentState !== "idle" && currentState !== "done" && currentState !== "error") {
+      respond({ ok: false, error: "録音中はテストできません" });
+      return;
+    }
+
+    ensureOffscreenDocument()
+      .then(() => testWhisperWithRetry(input))
+      .then(respond)
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        respond({ ok: false, error: `Offscreen 通信エラー: ${message}` });
+      });
+  },
+});
+
+subscribeRuntimeUrlDownloads((url, filename, respond) => {
+  downloadUrlFile(url, filename)
+    .then(() => respond({ ok: true }))
+    .catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      respond({ ok: false, error: message });
+    });
+});

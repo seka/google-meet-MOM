@@ -1,5 +1,16 @@
 import { saveRecording, updateRecording } from "../../db";
-import type { ExtensionMessage } from "../../messages";
+import {
+  publishRecordingSaved,
+  subscribeOffscreenRecordingCommands,
+} from "@data/recording";
+import {
+  publishRuntimeError,
+  publishTranscriptChunk,
+  publishTranscriptionComplete,
+  publishTranscriptionProgress,
+} from "@data/transcription";
+import { subscribeOffscreenConnectionTests } from "@data/connection-test";
+import { downloadRuntimeUrl } from "@data/file-download";
 import type { SpeakerEvent } from "@features/recording/types";
 import type { ExtensionSettings } from "@features/settings/types";
 import {
@@ -7,7 +18,7 @@ import {
   transcribe,
   transcribeChunk,
   transcribeSamples,
-} from "../../data/api/asr";
+} from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
 
@@ -31,62 +42,30 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function ignoreOptionalMessageError(): void {
-  void chrome.runtime.lastError;
-}
-
 function reportOffscreenError(err: unknown, sendResponse?: (response?: unknown) => void): void {
   const msg = toErrorMessage(err);
   sendResponse?.({ ok: false, error: msg });
-  chrome.runtime.sendMessage(
-    {
-      type: "ERROR",
-      target: "background",
-      payload: { message: msg },
-    },
-    ignoreOptionalMessageError,
-  );
+  publishRuntimeError(msg).catch(console.error);
 }
 
 function sendWhisperProgress(progress: number): void {
-  chrome.runtime.sendMessage(
-    {
-      type: "TRANSCRIPTION_PROGRESS",
-      payload: { progress },
-    },
-    ignoreOptionalMessageError,
-  );
+  publishTranscriptionProgress(progress).catch(console.error);
 }
 
 function downloadRecordingBlob(blob: Blob, filename: string): Promise<void> {
   const url = URL.createObjectURL(blob);
 
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      {
-        type: "DOWNLOAD_URL",
-        target: "background",
-        payload: { url, filename },
-      },
-      (result: { ok: boolean; error?: string } | null) => {
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 60_000);
-
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-
-        if (!result?.ok) {
-          reject(new Error(result?.error ?? "録音ファイルを保存できませんでした"));
-          return;
-        }
-
-        resolve();
-      },
-    );
-  });
+  return downloadRuntimeUrl(url, filename)
+    .then((result) => {
+      if (!result?.ok) {
+        throw new Error(result?.error ?? "録音ファイルを保存できませんでした");
+      }
+    })
+    .finally(() => {
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60_000);
+    });
 }
 
 // 設定間隔ごとに蓄積チャンクを処理してサイドパネルへ送信
@@ -108,14 +87,7 @@ async function processNextChunk(): Promise<void> {
       language: pendingSettings.language,
       onProgress: sendWhisperProgress,
     });
-    chrome.runtime.sendMessage(
-      {
-        type: "TRANSCRIPT_CHUNK",
-        target: "background",
-        payload: { text, chunkIndex: Math.floor(startIdx / WINDOW) },
-      },
-      ignoreOptionalMessageError,
-    );
+    await publishTranscriptChunk(text, Math.floor(startIdx / WINDOW));
   } catch {
     // 失敗した場合はカーソルを戻して次回リトライ
     processedChunkCount = startIdx;
@@ -214,14 +186,7 @@ async function stopAndTranscribe(
         }
       }
 
-      chrome.runtime.sendMessage(
-        {
-          type: "RECORDING_SAVED",
-          target: "background",
-          payload: { recordingId },
-        },
-        ignoreOptionalMessageError,
-      );
+      await publishRecordingSaved(recordingId);
 
       await transcribeAndSave(
         audioBlob,
@@ -259,77 +224,36 @@ async function transcribeAndSave(
 
     await updateRecording(recordingId, { transcript });
 
-    chrome.runtime.sendMessage(
-      {
-        type: "TRANSCRIPTION_DONE",
-        target: "background",
-        payload: { transcript, recordingId },
-      },
-      ignoreOptionalMessageError,
-    );
+    await publishTranscriptionComplete(transcript, recordingId);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    chrome.runtime.sendMessage(
-      {
-        type: "ERROR",
-        target: "background",
-        payload: { message: `文字起こしエラー: ${msg}` },
-      },
-      ignoreOptionalMessageError,
-    );
+    await publishRuntimeError(`文字起こしエラー: ${msg}`);
   }
 }
 
-chrome.runtime.onMessage.addListener(
-  (
-    message: ExtensionMessage,
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: unknown) => void,
-  ) => {
-    if (message.target !== "offscreen") return false;
-
-    (async () => {
-      switch (message.type) {
-        case "FORWARD_TO_OFFSCREEN": {
-          const { streamId, meetingTitle, settings } = message.payload;
-          await startRecording(streamId, meetingTitle, settings);
-          sendResponse({ ok: true });
-          break;
-        }
-
-        case "OFFSCREEN_STOP": {
-          const { speakerEvents, recordingStartTime } = message.payload;
-          if (!pendingSettings) throw new Error("録音設定を取得できませんでした");
-          await stopAndTranscribe(pendingSettings, speakerEvents, recordingStartTime);
-          sendResponse({ ok: true });
-          break;
-        }
-
-        case "WHISPER_TEST": {
-          const { audioSamples, model, language } = message.payload as {
-            audioSamples: number[];
-            model: string;
-            language: string;
-          };
-          try {
-            const audioData = new Float32Array(audioSamples);
-            const transcript = await transcribeSamples(audioData, {
-              model,
-              language,
-              onProgress: sendWhisperProgress,
-            });
-            sendResponse({ ok: true, transcript });
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            sendResponse({ ok: false, error: msg });
-          }
-          break;
-        }
-      }
-    })().catch((err: unknown) => {
-      reportOffscreenError(err, sendResponse);
-    });
-
-    return true;
+subscribeOffscreenRecordingCommands({
+  start(input, respond) {
+    startRecording(input.streamId, input.meetingTitle, input.settings)
+      .then(() => respond({ ok: true }))
+      .catch((err: unknown) => reportOffscreenError(err, respond));
   },
-);
+  stop(input, respond) {
+    if (!pendingSettings) {
+      respond({ ok: false, error: "録音設定を取得できませんでした" });
+      return;
+    }
+    stopAndTranscribe(pendingSettings, input.speakerEvents, input.recordingStartTime)
+      .then(() => respond({ ok: true }))
+      .catch((err: unknown) => reportOffscreenError(err, respond));
+  },
+});
+
+subscribeOffscreenConnectionTests(({ audioSamples, model, language }, respond) => {
+  const audioData = new Float32Array(audioSamples);
+  transcribeSamples(audioData, { model, language, onProgress: sendWhisperProgress })
+    .then((transcript) => respond({ ok: true, transcript }))
+    .catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      respond({ ok: false, error: message });
+    });
+});

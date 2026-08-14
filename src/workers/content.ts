@@ -1,4 +1,5 @@
 import type { SpeakerEvent } from "@features/recording/types";
+import { subscribeMeetingCommands } from "@data/meeting";
 
 export function getMeetingTitle(): string {
   const selectors = ["[data-meeting-title]", 'c-wiz [jsname="r4nke"]', '[jsname="ZaFQO"]'];
@@ -68,27 +69,15 @@ function stopSpeakerTracking(): void {
   observer = null;
 }
 
-chrome.runtime.onMessage.addListener(
-  (
-    message: { type: string; payload?: Record<string, unknown> },
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: unknown) => void,
-  ) => {
-    switch (message.type) {
-      case "GET_MEETING_TITLE":
-        sendResponse({ title: getMeetingTitle() });
-        return false;
-
-      case "START_SPEAKER_TRACKING":
-        startSpeakerTracking((message.payload?.recordingStartTime as number) ?? Date.now());
-        sendResponse({ ok: true });
-        return false;
-
-      case "GET_SPEAKER_EVENTS":
-        stopSpeakerTracking();
-        sendResponse({ speakerEvents });
-        return false;
-    }
-    return false;
+subscribeMeetingCommands({
+  getTitle() {
+    return { title: getMeetingTitle() };
   },
-);
+  startSpeakerTracking(recordingStartTime) {
+    startSpeakerTracking(recordingStartTime);
+  },
+  getSpeakerEvents() {
+    stopSpeakerTracking();
+    return { speakerEvents };
+  },
+});

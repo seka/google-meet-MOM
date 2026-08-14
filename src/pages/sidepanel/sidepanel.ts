@@ -2,6 +2,13 @@ import type { RecordingState } from "@features/recording/types";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { appendChunk, resetLog } from "@features/recording/components/log-section";
 import { loadAndApplyAppearance, subscribeAppearanceChanges } from "@features/settings/theme";
+import {
+  getRecordingState,
+  startRecording,
+  stopRecording,
+  subscribeRecordingStateChanged,
+} from "@data/recording";
+import { subscribeTranscriptionEvents } from "@data/transcription";
 
 const recordBtn = document.getElementById("record-btn") as HTMLButtonElement;
 const iconMic = document.getElementById("icon-mic") as HTMLElement;
@@ -36,10 +43,6 @@ const SPINNER_STATES = new Set<RecordingState>(["transcribing", "summarizing"]);
 
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
-}
-
-function ignoreOptionalMessageError(): void {
-  void chrome.runtime.lastError;
 }
 
 function chooseTabMediaStreamId(): Promise<string> {
@@ -107,10 +110,12 @@ document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
 
 recordBtn.addEventListener("click", async () => {
   if (currentState === "recording") {
-    chrome.runtime.sendMessage(
-      { type: "STOP_RECORDING", target: "background" },
-      ignoreOptionalMessageError,
-    );
+    try {
+      const result = await stopRecording();
+      if (!result?.ok) throw new Error(result?.error ?? "録音を停止できませんでした");
+    } catch (err) {
+      updateUI("error", `録音を停止できません: ${toErrorMessage(err)}`);
+    }
     return;
   }
 
@@ -149,14 +154,8 @@ recordBtn.addEventListener("click", async () => {
       chrome.storage.sync.get(DEFAULT_SETTINGS),
     ]);
 
-    chrome.runtime.sendMessage(
-      {
-        type: "START_RECORDING",
-        target: "background",
-        payload: { streamId, meetingTitle, settings, tabId: meetTab.id },
-      },
-      ignoreOptionalMessageError,
-    );
+    const result = await startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
+    if (!result?.ok) throw new Error(result?.error ?? "録音を開始できませんでした");
   } catch (err) {
     updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);
   }
@@ -191,43 +190,32 @@ openOptions.addEventListener("click", (e) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
-  if (message.type === "TRANSCRIPT_CHUNK") {
-    const { text } = message.payload as { text: string; chunkIndex: number };
+subscribeTranscriptionEvents({
+  chunk(text) {
     appendChunk(logContent, logPlaceholder, text);
-  }
-
-  if (message.type === "STATE_CHANGED") {
-    const {
-      state,
-      minutes,
-      message: msg,
-    } = message.payload as {
-      state: RecordingState;
-      minutes?: string;
-      message?: string;
-    };
-
-    updateUI(state, msg ?? "");
-
-    if (state === "done" && minutes) {
-      minutesText.textContent = minutes;
-      resultSection.hidden = false;
-      if (!transcriptText.textContent) switchTab("minutes");
-    }
-  }
-
-  if (message.type === "TRANSCRIPTION_DONE") {
-    const { transcript } = (message as { payload: { transcript: string } }).payload;
+  },
+  completed(transcript) {
     transcriptText.textContent = transcript;
     resultSection.hidden = false;
     switchTab("transcript");
+  },
+});
+
+subscribeRecordingStateChanged(({ state, minutes, message }) => {
+  updateUI(state, message ?? "");
+
+  if (state === "done" && minutes) {
+    minutesText.textContent = minutes;
+    resultSection.hidden = false;
+    if (!transcriptText.textContent) switchTab("minutes");
   }
 });
 
-chrome.runtime.sendMessage({ type: "GET_STATE" }, (res: { state: RecordingState } | null) => {
-  if (res) updateUI(res.state);
-});
+getRecordingState()
+  .then((response) => {
+    if (response) updateUI(response.state);
+  })
+  .catch(() => {});
 
 subscribeAppearanceChanges();
 loadAndApplyAppearance().catch((err: unknown) => {

@@ -1,22 +1,28 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vite-plus/test";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
-import type { ExtensionMessage } from "../messages";
-
 type SendResponse = (response?: unknown) => void;
 type MessageHandler = (
-  message: ExtensionMessage,
+  message: unknown,
   sender: chrome.runtime.MessageSender,
   sendResponse: SendResponse,
 ) => boolean;
 
 // test-setup.ts が先に chrome をスタブしている。
 // onMessage.addListener の実装を差し替え、background モジュールが登録するハンドラを捕捉する。
-let bgHandler!: MessageHandler;
+const bgHandlers: MessageHandler[] = [];
 (chrome.runtime.onMessage.addListener as ReturnType<typeof vi.fn>).mockImplementation(
   (fn: MessageHandler) => {
-    bgHandler = fn;
+    bgHandlers.push(fn);
   },
 );
+
+function bgHandler(
+  message: unknown,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: SendResponse,
+): void {
+  for (const handler of bgHandlers) handler(message, sender, sendResponse);
+}
 
 beforeAll(async () => {
   await import("./background");
@@ -27,8 +33,8 @@ beforeEach(() => {
   (chrome.runtime.getContexts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   (chrome.offscreen.createDocument as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
   (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-    (_msg: unknown, cb?: () => void) => {
-      cb?.();
+    (_msg: unknown, cb?: (response: unknown) => void) => {
+      cb?.({ ok: true });
     },
   );
   (chrome.tabs.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
@@ -76,7 +82,7 @@ describe("STOP_RECORDING", () => {
   it("OFFSCREEN_STOP を送信して sendResponse に ok:true を返す", async () => {
     const sendResponse = vi.fn();
     bgHandler(
-      { type: "STOP_RECORDING", target: "background" } as ExtensionMessage,
+      { type: "STOP_RECORDING", target: "background" },
       {} as chrome.runtime.MessageSender,
       sendResponse,
     );
@@ -115,13 +121,13 @@ describe("STOP_RECORDING", () => {
       },
     );
     (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      (_msg: unknown, cb?: () => void) => {
-        cb?.();
+      (_msg: unknown, cb?: (response: unknown) => void) => {
+        cb?.({ ok: true });
       },
     );
 
     bgHandler(
-      { type: "STOP_RECORDING", target: "background" } as ExtensionMessage,
+      { type: "STOP_RECORDING", target: "background" },
       {} as chrome.runtime.MessageSender,
       vi.fn(),
     );
@@ -144,7 +150,7 @@ describe("GET_STATE", () => {
   it("現在の状態を同期で返す", () => {
     const sendResponse = vi.fn();
     bgHandler(
-      { type: "GET_STATE" } as ExtensionMessage,
+      { type: "GET_STATE" },
       {} as chrome.runtime.MessageSender,
       sendResponse,
     );

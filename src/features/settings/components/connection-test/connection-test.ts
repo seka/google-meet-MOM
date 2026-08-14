@@ -1,4 +1,9 @@
 import { DEFAULT_SETTINGS } from "../../types";
+import {
+  testOllamaConnection,
+  testWhisperConnection,
+} from "@data/connection-test";
+import { subscribeTranscriptionEvents } from "@data/transcription";
 
 interface RecordingSession {
   audioCtx: AudioContext;
@@ -21,26 +26,22 @@ export function initializeConnectionTest(): void {
   let recordingSession: RecordingSession | null = null;
   let recordingTimer: ReturnType<typeof setInterval> | null = null;
 
-  ollamaTestBtn.addEventListener("click", () => {
+  ollamaTestBtn.addEventListener("click", async () => {
     ollamaTestBtn.disabled = true;
     ollamaTestStatus.textContent = "確認中...";
 
-    chrome.runtime.sendMessage(
-      {
-        type: "OLLAMA_TEST",
-        target: "background",
-        payload: {
-          ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
-          ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
-        },
-      },
-      (result: { ok: boolean; error?: string } | null) => {
-        ollamaTestStatus.textContent = result?.ok
-          ? "接続できました"
-          : `エラー: ${result?.error ?? "不明なエラー"}`;
-        ollamaTestBtn.disabled = false;
-      },
-    );
+    try {
+      const result = await testOllamaConnection({
+        ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
+        ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
+      });
+      ollamaTestStatus.textContent = result?.ok
+        ? "接続できました"
+        : `エラー: ${result?.error ?? "不明なエラー"}`;
+    } catch (err) {
+      ollamaTestStatus.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
+    }
+    ollamaTestBtn.disabled = false;
   });
 
   function updateRecordingStatus(startedAt: number): void {
@@ -140,29 +141,21 @@ export function initializeConnectionTest(): void {
       const audioSamples = await stopRecordingTest();
       const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
-      chrome.runtime.sendMessage(
-        {
-          type: "WHISPER_TEST",
-          target: "background",
-          payload: {
-            audioSamples: Array.from(audioSamples),
-            model: settings["whisperModel"],
-            language: settings["language"],
-          },
-        },
-        (result: { ok: boolean; transcript?: string; error?: string } | null) => {
-          if (result?.ok) {
-            whisperTestOutput.textContent =
-              result.transcript?.trim() || "（音声が認識できませんでした）";
-            whisperTestResult.hidden = false;
-            whisperTestStatus.textContent = "完了";
-          } else {
-            whisperTestStatus.textContent = `エラー: ${result?.error ?? "不明なエラー"}`;
-          }
-          whisperTestBtn.textContent = "録音開始";
-          whisperTestBtn.disabled = false;
-        },
-      );
+      const result = await testWhisperConnection({
+        audioSamples: Array.from(audioSamples),
+        model: settings["whisperModel"],
+        language: settings["language"],
+      });
+      if (result?.ok) {
+        whisperTestOutput.textContent =
+          result.transcript?.trim() || "（音声が認識できませんでした）";
+        whisperTestResult.hidden = false;
+        whisperTestStatus.textContent = "完了";
+      } else {
+        whisperTestStatus.textContent = `エラー: ${result?.error ?? "不明なエラー"}`;
+      }
+      whisperTestBtn.textContent = "録音開始";
+      whisperTestBtn.disabled = false;
     } catch (err) {
       whisperTestStatus.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
       whisperTestBtn.textContent = "録音開始";
@@ -170,10 +163,9 @@ export function initializeConnectionTest(): void {
     }
   });
 
-  chrome.runtime.onMessage.addListener((message: { type: string; payload?: unknown }) => {
-    if (message.type === "TRANSCRIPTION_PROGRESS") {
-      const { progress } = message.payload as { progress: number };
+  subscribeTranscriptionEvents({
+    progress(progress) {
       whisperTestStatus.textContent = `モデルをダウンロード中... ${Math.round(progress)}%`;
-    }
+    },
   });
 }
