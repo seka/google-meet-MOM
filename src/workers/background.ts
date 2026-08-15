@@ -109,7 +109,12 @@ async function setState(
   extra: Omit<RecordingStateEvent, "state"> = {},
 ): Promise<void> {
   currentState = state;
-  await publishRecordingState({ state, ...extra });
+  try {
+    await publishRecordingState({ state, ...extra });
+  } catch (err) {
+    // サイドパネルが閉じていても録音処理は継続できるため、通知失敗は状態遷移を止めない。
+    console.warn(err);
+  }
 }
 
 async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
@@ -226,7 +231,10 @@ subscribeBackgroundTranscriptionEvents({
       .catch(reportBackgroundError);
   },
   chunk(text, chunkIndex) {
-    broadcastTranscriptChunk(text, chunkIndex).catch(reportBackgroundError);
+    broadcastTranscriptChunk(text, chunkIndex).catch((err: unknown) => {
+      // サイドパネルが閉じていても文字起こしは継続できるため、配信失敗は記録処理を止めない。
+      console.warn(err);
+    });
   },
   error(message) {
     Promise.all([setState("error", { message }), closeOffscreenDocument()]).catch(

@@ -1,7 +1,4 @@
-import {
-  addChromeRuntimeMessageListener,
-  sendChromeRuntimeNotification,
-} from "@core/runtime/chrome";
+import { addChromeRuntimeMessageListener, sendChromeRuntimeMessage } from "@core/runtime/chrome";
 import { withDataCommunicationError } from "./error";
 
 type Respond = (response?: unknown) => void;
@@ -18,13 +15,13 @@ function toRuntimePayload(message: unknown): RuntimePayload {
 
 export function publishTranscriptionProgress(progress: number): Promise<void> {
   return withDataCommunicationError("文字起こし進捗の通知", () =>
-    sendChromeRuntimeNotification({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } }),
+    sendChromeRuntimeMessage({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } }),
   );
 }
 
 export function publishTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
   return withDataCommunicationError("文字起こしチャンクの通知", () =>
-    sendChromeRuntimeNotification({
+    sendChromeRuntimeMessage({
       type: "TRANSCRIPT_CHUNK",
       target: "background",
       payload: { text, chunkIndex },
@@ -34,7 +31,7 @@ export function publishTranscriptChunk(text: string, chunkIndex: number): Promis
 
 export function broadcastTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
   return withDataCommunicationError("文字起こしチャンクの配信", () =>
-    sendChromeRuntimeNotification({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } }),
+    sendChromeRuntimeMessage({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } }),
   );
 }
 
@@ -43,7 +40,7 @@ export function publishTranscriptionComplete(
   recordingId: string,
 ): Promise<void> {
   return withDataCommunicationError("文字起こし完了の通知", () =>
-    sendChromeRuntimeNotification({
+    sendChromeRuntimeMessage({
       type: "TRANSCRIPTION_DONE",
       target: "background",
       payload: { transcript, recordingId },
@@ -53,7 +50,7 @@ export function publishTranscriptionComplete(
 
 export function publishRuntimeError(message: string): Promise<void> {
   return withDataCommunicationError("実行時エラーの通知", () =>
-    sendChromeRuntimeNotification({ type: "ERROR", payload: { message } }),
+    sendChromeRuntimeMessage({ type: "ERROR", payload: { message } }),
   );
 }
 
@@ -62,22 +59,25 @@ export function subscribeBackgroundTranscriptionEvents(handlers: {
   chunk(text: string, chunkIndex: number): void;
   error(message: string): void;
 }): void {
-  addChromeRuntimeMessageListener((message) => {
+  addChromeRuntimeMessageListener((message, _sender, respond) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target === "offscreen") return false;
 
     if (runtimePayload.type === "TRANSCRIPTION_DONE") {
       const payload = runtimePayload.payload as { transcript: string; recordingId: string };
       handlers.completed(payload.transcript, payload.recordingId);
+      respond();
       return false;
     }
     if (runtimePayload.type === "TRANSCRIPT_CHUNK") {
       const payload = runtimePayload.payload as { text: string; chunkIndex: number };
       handlers.chunk(payload.text, payload.chunkIndex);
+      respond();
       return false;
     }
     if (runtimePayload.type === "ERROR") {
       handlers.error((runtimePayload.payload as { message: string }).message);
+      respond();
       return false;
     }
     return false;
@@ -89,7 +89,7 @@ export function subscribeTranscriptionEvents(handlers: {
   chunk?(text: string, chunkIndex: number): void;
   completed?(transcript: string, recordingId: string): void;
 }): void {
-  addChromeRuntimeMessageListener((message, _sender, _respond: Respond) => {
+  addChromeRuntimeMessageListener((message, _sender, respond: Respond) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.type === "TRANSCRIPTION_PROGRESS" && handlers.progress) {
       handlers.progress((runtimePayload.payload as { progress: number }).progress);
@@ -102,6 +102,7 @@ export function subscribeTranscriptionEvents(handlers: {
     } else {
       return false;
     }
+    respond();
     return false;
   });
 }

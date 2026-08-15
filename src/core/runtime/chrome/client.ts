@@ -19,15 +19,6 @@ export function sendChromeRuntimeMessage<Response = void>(payload: unknown): Pro
   });
 }
 
-export function sendChromeRuntimeNotification(payload: unknown): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(payload, () => {
-      void chrome.runtime.lastError;
-      resolve();
-    });
-  });
-}
-
 export function addChromeRuntimeMessageListener(listener: ChromeRuntimeListener): void {
   chrome.runtime.onMessage.addListener(listener);
 }
