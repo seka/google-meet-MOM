@@ -144,24 +144,23 @@ export function subscribeBackgroundRecordingCommands(handlers: {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target === "offscreen") return false;
 
-    if (runtimePayload.type === "START_RECORDING") {
-      handlers.start(runtimePayload.payload as StartRecordingInput, respond);
-      return true;
+    switch (runtimePayload.type) {
+      case "START_RECORDING":
+        handlers.start(runtimePayload.payload as StartRecordingInput, respond);
+        return true;
+      case "STOP_RECORDING":
+        handlers.stop(respond);
+        return true;
+      case "GET_STATE":
+        handlers.getState(respond);
+        return true;
+      case "RECORDING_SAVED":
+        handlers.recordingSaved((runtimePayload.payload as { recordingId: string }).recordingId);
+        respond();
+        return false;
+      default:
+        return false;
     }
-    if (runtimePayload.type === "STOP_RECORDING") {
-      handlers.stop(respond);
-      return true;
-    }
-    if (runtimePayload.type === "GET_STATE") {
-      handlers.getState(respond);
-      return true;
-    }
-    if (runtimePayload.type === "RECORDING_SAVED") {
-      handlers.recordingSaved((runtimePayload.payload as { recordingId: string }).recordingId);
-      respond();
-      return false;
-    }
-    return false;
   });
 }
 
@@ -173,15 +172,16 @@ export function subscribeOffscreenRecordingCommands(handlers: {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target !== "offscreen") return false;
 
-    if (runtimePayload.type === "FORWARD_TO_OFFSCREEN") {
-      handlers.start(runtimePayload.payload as StartOffscreenRecordingInput, respond);
-      return true;
+    switch (runtimePayload.type) {
+      case "FORWARD_TO_OFFSCREEN":
+        handlers.start(runtimePayload.payload as StartOffscreenRecordingInput, respond);
+        return true;
+      case "OFFSCREEN_STOP":
+        handlers.stop(runtimePayload.payload as StopOffscreenRecordingInput, respond);
+        return true;
+      default:
+        return false;
     }
-    if (runtimePayload.type === "OFFSCREEN_STOP") {
-      handlers.stop(runtimePayload.payload as StopOffscreenRecordingInput, respond);
-      return true;
-    }
-    return false;
   });
 }
 
@@ -190,9 +190,13 @@ export function subscribeRecordingStateChanged(
 ): void {
   addChromeRuntimeMessageListener((message, _sender, respond) => {
     const runtimePayload = toRuntimePayload(message);
-    if (runtimePayload.type !== "STATE_CHANGED") return false;
-    listener(runtimePayload.payload as RecordingStateEvent);
-    respond();
-    return false;
+    switch (runtimePayload.type) {
+      case "STATE_CHANGED":
+        listener(runtimePayload.payload as RecordingStateEvent);
+        respond();
+        return false;
+      default:
+        return false;
+    }
   });
 }
