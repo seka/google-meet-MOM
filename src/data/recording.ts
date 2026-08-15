@@ -1,4 +1,8 @@
-import { addChromeRuntimeMessageListener, sendChromeRuntimeMessage } from "@core/runtime/chrome";
+import {
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeMessage,
+  sendChromeRuntimeNotification,
+} from "@core/runtime/chrome";
 import { withDataCommunicationError } from "./error";
 
 export type RuntimeRecordingState =
@@ -96,7 +100,7 @@ export function getRecordingState(): Promise<RecordingStateSnapshot | null> {
 
 export function publishRecordingState(event: RecordingStateEvent): Promise<void> {
   return withDataCommunicationError("録音状態の通知", () =>
-    sendChromeRuntimeMessage({ type: "STATE_CHANGED", payload: event }),
+    sendChromeRuntimeNotification({ type: "STATE_CHANGED", payload: event }),
   );
 }
 
@@ -126,7 +130,7 @@ export function stopOffscreenRecording(
 
 export function publishRecordingSaved(recordingId: string): Promise<void> {
   return withDataCommunicationError("録音保存の通知", () =>
-    sendChromeRuntimeMessage({
+    sendChromeRuntimeNotification({
       type: "RECORDING_SAVED",
       target: "background",
       payload: { recordingId },

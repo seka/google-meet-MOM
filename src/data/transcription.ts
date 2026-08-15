@@ -1,4 +1,7 @@
-import { addChromeRuntimeMessageListener, sendChromeRuntimeMessage } from "@core/runtime/chrome";
+import {
+  addChromeRuntimeMessageListener,
+  sendChromeRuntimeNotification,
+} from "@core/runtime/chrome";
 import { withDataCommunicationError } from "./error";
 
 type Respond = (response?: unknown) => void;
@@ -15,13 +18,13 @@ function toRuntimePayload(message: unknown): RuntimePayload {
 
 export function publishTranscriptionProgress(progress: number): Promise<void> {
   return withDataCommunicationError("文字起こし進捗の通知", () =>
-    sendChromeRuntimeMessage({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } }),
+    sendChromeRuntimeNotification({ type: "TRANSCRIPTION_PROGRESS", payload: { progress } }),
   );
 }
 
 export function publishTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
   return withDataCommunicationError("文字起こしチャンクの通知", () =>
-    sendChromeRuntimeMessage({
+    sendChromeRuntimeNotification({
       type: "TRANSCRIPT_CHUNK",
       target: "background",
       payload: { text, chunkIndex },
@@ -31,7 +34,7 @@ export function publishTranscriptChunk(text: string, chunkIndex: number): Promis
 
 export function broadcastTranscriptChunk(text: string, chunkIndex: number): Promise<void> {
   return withDataCommunicationError("文字起こしチャンクの配信", () =>
-    sendChromeRuntimeMessage({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } }),
+    sendChromeRuntimeNotification({ type: "TRANSCRIPT_CHUNK", payload: { text, chunkIndex } }),
   );
 }
 
@@ -40,7 +43,7 @@ export function publishTranscriptionComplete(
   recordingId: string,
 ): Promise<void> {
   return withDataCommunicationError("文字起こし完了の通知", () =>
-    sendChromeRuntimeMessage({
+    sendChromeRuntimeNotification({
       type: "TRANSCRIPTION_DONE",
       target: "background",
       payload: { transcript, recordingId },
@@ -50,7 +53,7 @@ export function publishTranscriptionComplete(
 
 export function publishRuntimeError(message: string): Promise<void> {
   return withDataCommunicationError("実行時エラーの通知", () =>
-    sendChromeRuntimeMessage({ type: "ERROR", payload: { message } }),
+    sendChromeRuntimeNotification({ type: "ERROR", payload: { message } }),
   );
 }
 
