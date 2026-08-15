@@ -74,21 +74,22 @@ export function subscribeBackgroundConnectionTests(handlers: {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target === "offscreen") return false;
 
-    if (runtimePayload.type === "OLLAMA_TEST") {
-      handlers.ollama(
-        runtimePayload.payload as { ollamaUrl: string; ollamaModel: string },
-        respond,
-      );
-      return true;
+    switch (runtimePayload.type) {
+      case "OLLAMA_TEST":
+        handlers.ollama(
+          runtimePayload.payload as { ollamaUrl: string; ollamaModel: string },
+          respond,
+        );
+        return true;
+      case "WHISPER_TEST":
+        handlers.whisper(
+          runtimePayload.payload as { audioSamples: number[]; model: string; language: string },
+          respond,
+        );
+        return true;
+      default:
+        return false;
     }
-    if (runtimePayload.type === "WHISPER_TEST") {
-      handlers.whisper(
-        runtimePayload.payload as { audioSamples: number[]; model: string; language: string },
-        respond,
-      );
-      return true;
-    }
-    return false;
   });
 }
 
@@ -100,13 +101,17 @@ export function subscribeOffscreenConnectionTests(
 ): void {
   addChromeRuntimeMessageListener((message, _sender, respond) => {
     const runtimePayload = toRuntimePayload(message);
-    if (runtimePayload.target !== "offscreen" || runtimePayload.type !== "WHISPER_TEST") {
-      return false;
+    if (runtimePayload.target !== "offscreen") return false;
+
+    switch (runtimePayload.type) {
+      case "WHISPER_TEST":
+        handler(
+          runtimePayload.payload as { audioSamples: number[]; model: string; language: string },
+          respond,
+        );
+        return true;
+      default:
+        return false;
     }
-    handler(
-      runtimePayload.payload as { audioSamples: number[]; model: string; language: string },
-      respond,
-    );
-    return true;
   });
 }
