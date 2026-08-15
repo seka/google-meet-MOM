@@ -22,9 +22,15 @@ export function subscribeRuntimeUrlDownloads(
   addChromeRuntimeMessageListener((message, _sender, respond) => {
     if (typeof message !== "object" || message === null) return false;
     const runtimePayload = message as { type?: string; payload?: unknown };
-    if (runtimePayload.type !== "DOWNLOAD_URL") return false;
-    const payload = runtimePayload.payload as { url: string; filename: string };
-    handler(payload.url, payload.filename, respond);
-    return true;
+
+    switch (runtimePayload.type) {
+      case "DOWNLOAD_URL": {
+        const payload = runtimePayload.payload as { url: string; filename: string };
+        handler(payload.url, payload.filename, respond);
+        return true;
+      }
+      default:
+        return false;
+    }
   });
 }

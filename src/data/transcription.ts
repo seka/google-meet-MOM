@@ -59,25 +59,30 @@ export function subscribeBackgroundTranscriptionEvents(handlers: {
   chunk(text: string, chunkIndex: number): void;
   error(message: string): void;
 }): void {
-  addChromeRuntimeMessageListener((message) => {
+  addChromeRuntimeMessageListener((message, _sender, respond) => {
     const runtimePayload = toRuntimePayload(message);
     if (runtimePayload.target === "offscreen") return false;
 
-    if (runtimePayload.type === "TRANSCRIPTION_DONE") {
-      const payload = runtimePayload.payload as { transcript: string; recordingId: string };
-      handlers.completed(payload.transcript, payload.recordingId);
-      return false;
+    switch (runtimePayload.type) {
+      case "TRANSCRIPTION_DONE": {
+        const payload = runtimePayload.payload as { transcript: string; recordingId: string };
+        handlers.completed(payload.transcript, payload.recordingId);
+        respond();
+        return false;
+      }
+      case "TRANSCRIPT_CHUNK": {
+        const payload = runtimePayload.payload as { text: string; chunkIndex: number };
+        handlers.chunk(payload.text, payload.chunkIndex);
+        respond();
+        return false;
+      }
+      case "ERROR":
+        handlers.error((runtimePayload.payload as { message: string }).message);
+        respond();
+        return false;
+      default:
+        return false;
     }
-    if (runtimePayload.type === "TRANSCRIPT_CHUNK") {
-      const payload = runtimePayload.payload as { text: string; chunkIndex: number };
-      handlers.chunk(payload.text, payload.chunkIndex);
-      return false;
-    }
-    if (runtimePayload.type === "ERROR") {
-      handlers.error((runtimePayload.payload as { message: string }).message);
-      return false;
-    }
-    return false;
   });
 }
 
@@ -86,19 +91,29 @@ export function subscribeTranscriptionEvents(handlers: {
   chunk?(text: string, chunkIndex: number): void;
   completed?(transcript: string, recordingId: string): void;
 }): void {
-  addChromeRuntimeMessageListener((message, _sender, _respond: Respond) => {
+  addChromeRuntimeMessageListener((message, _sender, respond: Respond) => {
     const runtimePayload = toRuntimePayload(message);
-    if (runtimePayload.type === "TRANSCRIPTION_PROGRESS" && handlers.progress) {
-      handlers.progress((runtimePayload.payload as { progress: number }).progress);
-    } else if (runtimePayload.type === "TRANSCRIPT_CHUNK" && handlers.chunk) {
-      const payload = runtimePayload.payload as { text: string; chunkIndex: number };
-      handlers.chunk(payload.text, payload.chunkIndex);
-    } else if (runtimePayload.type === "TRANSCRIPTION_DONE" && handlers.completed) {
-      const payload = runtimePayload.payload as { transcript: string; recordingId: string };
-      handlers.completed(payload.transcript, payload.recordingId);
-    } else {
-      return false;
+    switch (runtimePayload.type) {
+      case "TRANSCRIPTION_PROGRESS":
+        if (!handlers.progress) return false;
+        handlers.progress((runtimePayload.payload as { progress: number }).progress);
+        break;
+      case "TRANSCRIPT_CHUNK": {
+        if (!handlers.chunk) return false;
+        const payload = runtimePayload.payload as { text: string; chunkIndex: number };
+        handlers.chunk(payload.text, payload.chunkIndex);
+        break;
+      }
+      case "TRANSCRIPTION_DONE": {
+        if (!handlers.completed) return false;
+        const payload = runtimePayload.payload as { transcript: string; recordingId: string };
+        handlers.completed(payload.transcript, payload.recordingId);
+        break;
+      }
+      default:
+        return false;
     }
+    respond();
     return false;
   });
 }
