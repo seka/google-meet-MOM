@@ -1,4 +1,5 @@
 import { defineConfig } from "vite-plus";
+import { playwright } from "vite-plus/test/browser-playwright";
 import { execFileSync } from "node:child_process";
 import { resolve } from "path";
 
@@ -68,8 +69,30 @@ export default defineConfig({
     exclude: ["@huggingface/transformers"],
   },
   test: {
-    environment: "happy-dom",
-    include: ["**/*.test.ts"],
-    setupFiles: ["./test-setup.ts"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "happy-dom",
+          include: ["**/*.test.ts"],
+          exclude: ["**/*.browser.test.ts"],
+          setupFiles: ["./test-setup.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "browser",
+          include: ["**/*.browser.test.ts"],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright(),
+            instances: [{ browser: "chromium" }],
+          },
+        },
+      },
+    ],
   },
 });

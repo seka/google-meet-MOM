@@ -45,7 +45,17 @@ Chrome で `chrome://extensions` を開き、「パッケージ化されてい�
 npm run dev          # ファイル変更を監視して自動ビルド
 npx vp check         # Lint・型チェック
 npx vp check --fix   # フォーマット自動修正
+npm test             # ユニットテストとブラウザテスト
+npm run test:browser # Chromiumでブラウザテストのみ実行
 ```
+
+ブラウザテストを初めて実行する前に、Playwright 管理下の Chromium をインストールしてください。
+
+```bash
+vp exec playwright install chromium
+```
+
+ブラウザテストは headless Chromium で実行され、失敗時のブラウザ例外と `console` 出力は Vitest の結果に表示されます。
 
 ビルド後、`chrome://extensions` で拡張機能の更新ボタン（🔄）をクリックして反映します。
 設定画面の「この拡張機能について」では、バージョンとビルド元のGitコミットIDを確認できます。
