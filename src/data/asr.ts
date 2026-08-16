@@ -1,11 +1,11 @@
 import {
-  type WhisperClient,
-  type WhisperProgressHandler,
-  type WhisperTranscription,
-} from "@core/api/whisper/client";
+  type TranscriberClient,
+  type Transcription,
+  type TranscriptionProgressHandler,
+} from "@core/api/transcriber_client";
 
-export type AsrProgressHandler = WhisperProgressHandler;
-export type AsrTranscription = WhisperTranscription;
+export type AsrProgressHandler = TranscriptionProgressHandler;
+export type AsrTranscription = Transcription;
 
 export interface AsrTranscribeOptions {
   model: string;
@@ -33,7 +33,7 @@ export async function decodeAndResample(blob: Blob): Promise<Float32Array> {
 }
 
 export class Asr {
-  constructor(private readonly client: WhisperClient) {}
+  constructor(private readonly client: TranscriberClient) {}
 
   async transcribeChunk(blob: Blob, options: AsrTranscribeOptions): Promise<string> {
     const audioData = await decodeAndResample(blob);

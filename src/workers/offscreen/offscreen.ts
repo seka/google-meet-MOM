@@ -13,11 +13,11 @@ import type { ExtensionSettings } from "@features/settings/types";
 import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
-import { createWhisperClient } from "@core/api/whisper/client";
+import { WhisperClient } from "@core/api/whisper/client";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 const asr = new Asr(
-  createWhisperClient({
+  new WhisperClient({
     wasmPaths: chrome.runtime.getURL("vendor/transformers/"),
     localModelPath: chrome.runtime.getURL("models/"),
   }),

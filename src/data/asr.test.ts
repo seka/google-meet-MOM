@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { WhisperClient } from "@core/api/whisper/client";
+import type { TranscriberClient } from "@core/api/transcriber_client";
 import { Asr, decodeAndResample } from "./asr";
 
 const decodedAudio = { duration: 0.50001 } as AudioBuffer;
@@ -15,8 +15,8 @@ const decodeAudioData = vi.fn();
 const startRendering = vi.fn();
 const createBufferSource = vi.fn();
 const offlineAudioContext = vi.fn();
-const clientTranscribe = vi.fn<WhisperClient["transcribe"]>();
-const client: WhisperClient = { transcribe: clientTranscribe };
+const clientTranscribe = vi.fn<TranscriberClient["transcribe"]>();
+const client: TranscriberClient = { transcribe: clientTranscribe };
 const arrayBuffer = vi.fn();
 const blob = { arrayBuffer } as unknown as Blob;
 
