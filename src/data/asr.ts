@@ -1,22 +1,16 @@
 import {
-  configureWhisperRuntime,
-  transcribeWithWhisper,
-  type WhisperProgressHandler,
-  type WhisperRuntimeOptions,
-  type WhisperTranscription,
-} from "@core/api/whisper/client";
+  type TranscriberClient,
+  type Transcription,
+  type TranscriptionProgressHandler,
+} from "@core/api/transcriber_client";
 
-export type AsrProgressHandler = WhisperProgressHandler;
-export type AsrTranscription = WhisperTranscription;
+export type AsrProgressHandler = TranscriptionProgressHandler;
+export type AsrTranscription = Transcription;
 
 export interface AsrTranscribeOptions {
   model: string;
   language: string;
   onProgress?: AsrProgressHandler;
-}
-
-export function configureAsrRuntime(options: WhisperRuntimeOptions): void {
-  configureWhisperRuntime(options);
 }
 
 export async function decodeAndResample(blob: Blob): Promise<Float32Array> {
@@ -38,39 +32,31 @@ export async function decodeAndResample(blob: Blob): Promise<Float32Array> {
   return resampled.getChannelData(0);
 }
 
-export async function transcribeChunk(blob: Blob, options: AsrTranscribeOptions): Promise<string> {
-  const audioData = await decodeAndResample(blob);
-  const result = await transcribeWithWhisper(audioData, {
-    model: options.model,
-    language: options.language,
-    onProgress: options.onProgress,
-    returnTimestamps: false,
-  });
-  return result.text;
-}
+export class Asr {
+  constructor(private readonly client: TranscriberClient) {}
 
-export async function transcribe(
-  audioBlob: Blob,
-  options: AsrTranscribeOptions,
-): Promise<AsrTranscription> {
-  const audioData = await decodeAndResample(audioBlob);
-  return transcribeWithWhisper(audioData, {
-    model: options.model,
-    language: options.language,
-    onProgress: options.onProgress,
-    returnTimestamps: true,
-  });
-}
+  async transcribeChunk(blob: Blob, options: AsrTranscribeOptions): Promise<string> {
+    const audioData = await decodeAndResample(blob);
+    const result = await this.client.transcribe(audioData, {
+      ...options,
+      returnTimestamps: false,
+    });
+    return result.text;
+  }
 
-export async function transcribeSamples(
-  audioData: Float32Array,
-  options: AsrTranscribeOptions,
-): Promise<string> {
-  const result = await transcribeWithWhisper(audioData, {
-    model: options.model,
-    language: options.language,
-    onProgress: options.onProgress,
-    returnTimestamps: false,
-  });
-  return result.text;
+  async transcribe(audioBlob: Blob, options: AsrTranscribeOptions): Promise<AsrTranscription> {
+    const audioData = await decodeAndResample(audioBlob);
+    return this.client.transcribe(audioData, {
+      ...options,
+      returnTimestamps: true,
+    });
+  }
+
+  async transcribeSamples(audioData: Float32Array, options: AsrTranscribeOptions): Promise<string> {
+    const result = await this.client.transcribe(audioData, {
+      ...options,
+      returnTimestamps: false,
+    });
+    return result.text;
+  }
 }

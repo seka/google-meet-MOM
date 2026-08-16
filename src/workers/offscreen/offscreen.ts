@@ -10,21 +10,19 @@ import { subscribeOffscreenConnectionTests } from "@data/connection-test";
 import { downloadRuntimeUrl } from "@data/file-download";
 import type { SpeakerEvent } from "@features/recording/types";
 import type { ExtensionSettings } from "@features/settings/types";
-import {
-  configureAsrRuntime,
-  transcribe,
-  transcribeChunk,
-  transcribeSamples,
-} from "../../data/asr";
+import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
 import { RecordingSession } from "@features/recording/models/recording-session";
+import { WhisperClient } from "@core/api/whisper/client";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
-configureAsrRuntime({
-  wasmPaths: chrome.runtime.getURL("vendor/transformers/"),
-  localModelPath: chrome.runtime.getURL("models/"),
-});
+const asr = new Asr(
+  new WhisperClient({
+    wasmPaths: chrome.runtime.getURL("vendor/transformers/"),
+    localModelPath: chrome.runtime.getURL("models/"),
+  }),
+);
 
 const recordingSession = new RecordingSession();
 let currentMeetingTitle = "Google Meet";
@@ -80,7 +78,7 @@ async function processNextChunk(): Promise<void> {
 
   try {
     const blob = new Blob(window, { type: "audio/webm;codecs=opus" });
-    const text = await transcribeChunk(blob, {
+    const text = await asr.transcribeChunk(blob, {
       model: pendingSettings.whisperModel,
       language: pendingSettings.language,
       onProgress: sendWhisperProgress,
@@ -184,7 +182,7 @@ async function transcribeAndSave(
   recordingStartTime: number,
 ): Promise<void> {
   try {
-    const result = await transcribe(audioBlob, {
+    const result = await asr.transcribe(audioBlob, {
       model: settings.whisperModel,
       language: settings.language,
       onProgress: sendWhisperProgress,
@@ -223,7 +221,8 @@ subscribeOffscreenRecordingCommands({
 
 subscribeOffscreenConnectionTests(({ audioSamples, model, language }, respond) => {
   const audioData = new Float32Array(audioSamples);
-  transcribeSamples(audioData, { model, language, onProgress: sendWhisperProgress })
+  asr
+    .transcribeSamples(audioData, { model, language, onProgress: sendWhisperProgress })
     .then((transcript) => respond({ ok: true, transcript }))
     .catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
