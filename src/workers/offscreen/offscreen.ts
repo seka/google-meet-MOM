@@ -18,7 +18,7 @@ import {
 } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
-import { RecordingSession } from "@core/recording/recording-session";
+import { RecordingSession } from "@features/recording/models/recording-session";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
 configureAsrRuntime({
