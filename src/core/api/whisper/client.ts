@@ -18,21 +18,17 @@ type ASRPipeline = (
   options: Record<string, unknown>,
 ) => Promise<ASRResult | ASRResult[]>;
 
-function configureWhisperRuntime(options: WhisperRuntimeOptions): void {
-  if (env.backends.onnx.wasm) {
-    env.backends.onnx.wasm.numThreads = 1;
-    env.backends.onnx.wasm.wasmPaths = options.wasmPaths;
-  }
-  env.allowLocalModels = true;
-  env.localModelPath = options.localModelPath;
-}
-
 export class WhisperClient implements TranscriberClient {
   private whisperPipeline: ASRPipeline | null = null;
   private whisperPipelineModel: string | null = null;
 
   constructor(runtimeOptions: WhisperRuntimeOptions) {
-    configureWhisperRuntime(runtimeOptions);
+    if (env.backends.onnx.wasm) {
+      env.backends.onnx.wasm.numThreads = 1;
+      env.backends.onnx.wasm.wasmPaths = runtimeOptions.wasmPaths;
+    }
+    env.allowLocalModels = true;
+    env.localModelPath = runtimeOptions.localModelPath;
   }
 
   private async loadWhisper(
