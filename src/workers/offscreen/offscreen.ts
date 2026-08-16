@@ -13,6 +13,7 @@ import type { ExtensionSettings } from "@features/settings/types";
 import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
+import { RecordingSession } from "@features/recording/models/recording-session";
 import { WhisperClient } from "@core/api/whisper/client";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
@@ -23,8 +24,7 @@ const asr = new Asr(
   }),
 );
 
-let mediaRecorder: MediaRecorder | null = null;
-let audioChunks: Blob[] = [];
+const recordingSession = new RecordingSession();
 let currentMeetingTitle = "Google Meet";
 
 // チャンク処理の状態
@@ -67,6 +67,7 @@ function downloadRecordingBlob(blob: Blob, filename: string): Promise<void> {
 async function processNextChunk(): Promise<void> {
   if (!pendingSettings) return;
   const WINDOW = pendingSettings.chunkIntervalSec; // 1秒チャンク × N秒分
+  const audioChunks = recordingSession.getChunks();
   const available = audioChunks.length - processedChunkCount;
   if (available < WINDOW || isProcessingChunk) return;
 
@@ -116,17 +117,7 @@ async function startRecording(
   audioCtx.createMediaStreamSource(tabStream).connect(destination);
   audioCtx.createMediaStreamSource(micStream).connect(destination);
 
-  audioChunks = [];
-
-  mediaRecorder = new MediaRecorder(destination.stream, {
-    mimeType: "audio/webm;codecs=opus",
-  });
-
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data.size > 0) audioChunks.push(e.data);
-  };
-
-  mediaRecorder.start(1000);
+  recordingSession.start(destination.stream);
 
   chunkIntervalId = setInterval(() => {
     processNextChunk().catch(reportOffscreenError);
@@ -138,8 +129,6 @@ async function stopAndTranscribe(
   speakerEvents: SpeakerEvent[],
   recordingStartTime: number,
 ): Promise<void> {
-  if (!mediaRecorder) return;
-
   // チャンクインターバルを停止し、処理中のチャンクが完了するまで待つ
   if (chunkIntervalId) {
     clearInterval(chunkIntervalId);
@@ -150,51 +139,38 @@ async function stopAndTranscribe(
   }
 
   const recordingActualStart = recordingStartTime;
+  const audioBlob = await recordingSession.stop();
+  if (!audioBlob) return;
+  const duration = (Date.now() - recordingActualStart) / 1000;
+  const savedAt = new Date().toISOString();
 
-  return new Promise((resolve) => {
-    mediaRecorder!.onstop = async () => {
-      const duration = (Date.now() - recordingActualStart) / 1000;
-      const savedAt = new Date().toISOString();
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm;codecs=opus" });
-
-      const recordingId = await saveRecording({
-        date: savedAt,
-        meetingTitle: currentMeetingTitle,
-        duration,
-        audioBlob,
-        transcript: "",
-        minutes: "",
-      });
-
-      if (settings.recordingOutputDestination === "download") {
-        const filename = buildOutputFilename({
-          meetingTitle: currentMeetingTitle,
-          date: savedAt,
-          kind: "recording",
-          extension: "webm",
-        });
-
-        try {
-          await downloadRecordingBlob(audioBlob, filename);
-        } catch {
-          // ファイル保存が失敗しても、ブラウザ内保存と文字起こしは継続する。
-        }
-      }
-
-      await publishRecordingSaved(recordingId);
-
-      await transcribeAndSave(
-        audioBlob,
-        recordingId,
-        settings,
-        speakerEvents,
-        recordingActualStart,
-      );
-      resolve();
-    };
-
-    mediaRecorder!.stop();
+  const recordingId = await saveRecording({
+    date: savedAt,
+    meetingTitle: currentMeetingTitle,
+    duration,
+    audioBlob,
+    transcript: "",
+    minutes: "",
   });
+
+  if (settings.recordingOutputDestination === "download") {
+    const filename = buildOutputFilename({
+      meetingTitle: currentMeetingTitle,
+      date: savedAt,
+      kind: "recording",
+      extension: "webm",
+    });
+
+    try {
+      await downloadRecordingBlob(audioBlob, filename);
+    } catch {
+      // ファイル保存が失敗しても、ブラウザ内保存と文字起こしは継続する。
+    }
+  }
+
+  await publishRecordingSaved(recordingId);
+
+  await transcribeAndSave(audioBlob, recordingId, settings, speakerEvents, recordingActualStart);
 }
 
 // 全音声を話者ラベル付きで転写（録音終了後の最終トランスクリプト）
