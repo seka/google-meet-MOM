@@ -2,7 +2,7 @@ import {
   type TranscriberClient,
   type Transcription,
   type TranscriptionProgressHandler,
-} from "@core/api/transcriber_client";
+} from "@core/api/transcriber-client";
 
 export type AsrProgressHandler = TranscriptionProgressHandler;
 export type AsrTranscription = Transcription;

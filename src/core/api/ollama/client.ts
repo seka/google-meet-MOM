@@ -1,4 +1,4 @@
-import { ApiError, HttpClient } from "../http_client";
+import { ApiError, HttpClient } from "../http-client";
 
 export interface OllamaModel {
   name?: string;
