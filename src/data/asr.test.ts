@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { TranscriberClient } from "@core/api/transcriber_client";
+import type { TranscriberClient } from "@core/api/transcriber-client";
 import { Asr, decodeAndResample } from "./asr";
 
 const decodedAudio = { duration: 0.50001 } as AudioBuffer;

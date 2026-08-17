@@ -5,7 +5,7 @@ import type {
   Transcription,
   TranscriptionChunk,
   TranscriptionProgressHandler,
-} from "../transcriber_client";
+} from "../transcriber-client";
 
 export interface WhisperRuntimeOptions {
   wasmPaths: string;
