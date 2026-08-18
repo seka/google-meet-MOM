@@ -6,6 +6,7 @@
     "dev": "vp build --watch",
     "build": "vp build",
     "test": "vp test",
+    "test:browser": "vp test run --project=browser",
     "prepare": "vp config"
   },
   "dependencies": {
@@ -13,7 +14,9 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
+    "@vitest/browser-playwright": "4.1.9",
     "happy-dom": "^20.10.6",
+    "playwright": "1.62.1",
     "typescript": "^5.5.0",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.1",
     "vite-plus": "0.2.1"
