@@ -14,6 +14,7 @@ import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { buildOutputFilename } from "@core/io/file_writer";
 import { RecordingSession } from "@features/recording/models/recording-session";
+import { getTabAudioStream } from "@features/recording/models/tab-audio-stream";
 import { WhisperClient } from "@core/api/whisper/client";
 
 // SharedArrayBuffer なしで動作させるためシングルスレッドに固定
@@ -102,13 +103,7 @@ async function startRecording(
   processedChunkCount = 0;
   isProcessingChunk = false;
 
-  const tabStream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      chromeMediaSource: "desktop",
-      chromeMediaSourceId: streamId,
-    } as unknown as MediaTrackConstraints,
-    video: false,
-  });
+  const tabStream = await getTabAudioStream(streamId);
 
   const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
