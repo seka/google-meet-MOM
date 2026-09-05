@@ -51,6 +51,22 @@ export default defineConfig({
     // Chrome Extension では生成された modulepreload が再利用されず警告になるため無効化する。
     modulePreload: false,
     rollupOptions: {
+      plugins: [
+        {
+          name: "assert-classic-content-script",
+          generateBundle(_options, bundle) {
+            const contentScript = bundle["content.js"];
+            if (
+              contentScript?.type === "chunk" &&
+              (contentScript.imports.length > 0 || contentScript.dynamicImports.length > 0)
+            ) {
+              this.error(
+                "content.js must not contain imports because Chrome loads it as a classic script",
+              );
+            }
+          },
+        },
+      ],
       input: {
         background: resolve(__dirname, "src/workers/background.ts"),
         content: resolve(__dirname, "src/workers/content.ts"),
