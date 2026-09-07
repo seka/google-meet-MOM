@@ -75,7 +75,7 @@ async function ensureOffscreenDocument(): Promise<void> {
   if (contexts.length === 0) {
     await chrome.offscreen.createDocument({
       url: "workers/offscreen/offscreen.html",
-      reasons: [chrome.offscreen.Reason.USER_MEDIA, chrome.offscreen.Reason.DISPLAY_MEDIA],
+      reasons: [chrome.offscreen.Reason.USER_MEDIA],
       justification: "Recording Google Meet tab audio and microphone",
     });
   }

@@ -12,7 +12,7 @@ vi.stubGlobal("chrome", {
     sendMessage: vi.fn(),
     query: vi.fn().mockResolvedValue([]),
   },
-  desktopCapture: { chooseDesktopMedia: vi.fn() },
+  tabCapture: { getMediaStreamId: vi.fn() },
   storage: {
     sync: { get: vi.fn() },
     onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
