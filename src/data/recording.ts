@@ -112,6 +112,15 @@ export function startOffscreenRecording(
   );
 }
 
+export function checkOffscreenRecordingReady(): Promise<RuntimeResult | null> {
+  return withDataCommunicationError("Offscreen録音の準備確認", () =>
+    sendChromeRuntimeMessage<RuntimeResult | null>({
+      type: "OFFSCREEN_RECORDING_READY",
+      target: "offscreen",
+    }),
+  );
+}
+
 export function stopOffscreenRecording(
   input: StopOffscreenRecordingInput,
 ): Promise<RuntimeResult | null> {
@@ -173,6 +182,9 @@ export function subscribeOffscreenRecordingCommands(handlers: {
     if (runtimePayload.target !== "offscreen") return false;
 
     switch (runtimePayload.type) {
+      case "OFFSCREEN_RECORDING_READY":
+        respond({ ok: true });
+        return false;
       case "FORWARD_TO_OFFSCREEN":
         handlers.start(runtimePayload.payload as StartOffscreenRecordingInput, respond);
         return true;

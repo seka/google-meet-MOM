@@ -18,19 +18,15 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function chooseTabMediaStreamId(): Promise<string> {
+function getTabMediaStreamId(): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-    chrome.desktopCapture.chooseDesktopMedia(["tab", "audio"], (id, options) => {
+    chrome.tabCapture.getMediaStreamId({}, (id) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
       }
       if (!id) {
-        reject(new Error("タブの選択がキャンセルされました"));
-        return;
-      }
-      if (!options.canRequestAudioTrack) {
-        reject(new Error("選択したタブの音声共有を有効にしてください"));
+        reject(new Error("録音用ストリーム ID を取得できませんでした"));
         return;
       }
       resolve(id);
@@ -59,7 +55,8 @@ async function toggleRecording(): Promise<void> {
   recordingLog.reset();
   recordingResult.reset();
 
-  const streamIdPromise = chooseTabMediaStreamId();
+  // tabCaptureはクリックのユーザー操作中に開始する必要がある。
+  const streamIdPromise = getTabMediaStreamId();
 
   try {
     const [meetTab] = await chrome.tabs.query({

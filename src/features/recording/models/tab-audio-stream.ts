@@ -1,6 +1,6 @@
-interface ChromeDesktopAudioConstraints extends MediaTrackConstraints {
+interface ChromeTabAudioConstraints extends MediaTrackConstraints {
   mandatory: {
-    chromeMediaSource: "desktop";
+    chromeMediaSource: "tab";
     chromeMediaSourceId: string;
   };
 }
@@ -9,9 +9,9 @@ export async function getTabAudioStream(
   streamId: string,
   mediaDevices: Pick<MediaDevices, "getUserMedia"> = navigator.mediaDevices,
 ): Promise<MediaStream> {
-  const audio: ChromeDesktopAudioConstraints = {
+  const audio: ChromeTabAudioConstraints = {
     mandatory: {
-      chromeMediaSource: "desktop",
+      chromeMediaSource: "tab",
       chromeMediaSourceId: streamId,
     },
   };

@@ -76,6 +76,46 @@ describe("START_RECORDING", () => {
       expect.any(Function),
     );
   });
+
+  it("offscreenのready応答を待ってからstreamIdを転送する", async () => {
+    let readyAttempts = 0;
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
+      (message: unknown, callback?: (response: unknown) => void) => {
+        const type = (message as { type?: string }).type;
+        if (type === "OFFSCREEN_RECORDING_READY") {
+          readyAttempts += 1;
+          if (readyAttempts === 1) {
+            (chrome.runtime as unknown as Record<string, unknown>).lastError = {
+              message: "Receiving end does not exist",
+            };
+            callback?.(undefined);
+            (chrome.runtime as unknown as Record<string, unknown>).lastError = undefined;
+            return;
+          }
+        }
+        callback?.({ ok: true });
+      },
+    );
+
+    const sendResponse = vi.fn();
+    bgHandler(
+      { type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD },
+      {} as chrome.runtime.MessageSender,
+      sendResponse,
+    );
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ ok: true }));
+    expect(readyAttempts).toBe(2);
+
+    const messages = (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mock.calls
+      .map(([message]) => (message as { type?: string }).type)
+      .filter((type) => type === "OFFSCREEN_RECORDING_READY" || type === "FORWARD_TO_OFFSCREEN");
+    expect(messages).toEqual([
+      "OFFSCREEN_RECORDING_READY",
+      "OFFSCREEN_RECORDING_READY",
+      "FORWARD_TO_OFFSCREEN",
+    ]);
+  });
 });
 
 describe("STOP_RECORDING", () => {
