@@ -109,7 +109,9 @@ async function startRecording(
 
   const audioCtx = new AudioContext();
   const destination = audioCtx.createMediaStreamDestination();
-  audioCtx.createMediaStreamSource(tabStream).connect(destination);
+  const tabSource = audioCtx.createMediaStreamSource(tabStream);
+  tabSource.connect(destination);
+  tabSource.connect(audioCtx.destination);
   audioCtx.createMediaStreamSource(micStream).connect(destination);
 
   recordingSession.start(destination.stream);

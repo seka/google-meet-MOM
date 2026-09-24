@@ -12,13 +12,17 @@ vi.stubGlobal("chrome", {
     sendMessage: vi.fn(),
     query: vi.fn().mockResolvedValue([]),
   },
-  desktopCapture: { chooseDesktopMedia: vi.fn() },
+  action: { onClicked: { addListener: vi.fn() } },
+  tabCapture: { getMediaStreamId: vi.fn() },
   storage: {
     sync: { get: vi.fn() },
     onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
   },
   downloads: { download: vi.fn() },
-  sidePanel: { setPanelBehavior: vi.fn().mockResolvedValue(undefined) },
+  sidePanel: {
+    open: vi.fn().mockResolvedValue(undefined),
+    setPanelBehavior: vi.fn().mockResolvedValue(undefined),
+  },
   alarms: {
     create: vi.fn().mockResolvedValue(undefined),
     onAlarm: { addListener: vi.fn() },

@@ -1,7 +1,8 @@
 import type { RecordingState, SpeakerEvent } from "@features/recording/types";
-import type { ExtensionSettings } from "@features/settings/types";
+import { DEFAULT_SETTINGS, type ExtensionSettings } from "@features/settings/types";
 import { updateRecording } from "../db";
 import {
+  checkOffscreenRecordingReady,
   publishRecordingState,
   startOffscreenRecording,
   stopOffscreenRecording,
@@ -33,6 +34,9 @@ let recordingStartTime = 0;
 let meetTabId: number | null = null;
 let currentSettings: ExtensionSettings | null = null;
 
+const OFFSCREEN_READY_ATTEMPTS = 20;
+const OFFSCREEN_READY_INTERVAL_MS = 50;
+
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
@@ -57,8 +61,24 @@ function reportBackgroundError(err: unknown): void {
   setState("error", { message: toErrorMessage(err) }).catch(console.error);
 }
 
-// アイコンクリックでサイドパネルを開く
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(reportBackgroundError);
+// 以前のバージョンで保存された自動オープン設定を解除し、action.onClickedで録音を開始する。
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(reportBackgroundError);
+
+function getTabMediaStreamId(tabId: number): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    chrome.tabCapture.getMediaStreamId({ targetTabId: tabId }, (streamId) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!streamId) {
+        reject(new Error("録音用ストリーム ID を取得できませんでした"));
+        return;
+      }
+      resolve(streamId);
+    });
+  });
+}
 
 // SW が録音中に終了しないよう定期アラームで維持
 chrome.alarms.create("keepalive", { periodInMinutes: 0.2 }).catch(reportBackgroundError);
@@ -68,13 +88,32 @@ async function ensureOffscreenDocument(): Promise<void> {
   const contexts = await chrome.runtime.getContexts({
     contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
   });
-  if (contexts.length > 0) return;
+  if (contexts.length === 0) {
+    await chrome.offscreen.createDocument({
+      url: "workers/offscreen/offscreen.html",
+      reasons: [chrome.offscreen.Reason.USER_MEDIA],
+      justification: "Recording Google Meet tab audio and microphone",
+    });
+  }
 
-  await chrome.offscreen.createDocument({
-    url: "workers/offscreen/offscreen.html",
-    reasons: [chrome.offscreen.Reason.USER_MEDIA, chrome.offscreen.Reason.DISPLAY_MEDIA],
-    justification: "Recording Google Meet tab audio and microphone",
-  });
+  let lastError: unknown;
+  for (let attempt = 0; attempt < OFFSCREEN_READY_ATTEMPTS; attempt++) {
+    try {
+      const result = await checkOffscreenRecordingReady();
+      if (result?.ok) return;
+      lastError = new Error(result?.error ?? "Offscreen document did not report ready");
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < OFFSCREEN_READY_ATTEMPTS - 1) {
+      await new Promise<void>((resolve) => setTimeout(resolve, OFFSCREEN_READY_INTERVAL_MS));
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Offscreen document did not become ready");
 }
 
 async function closeOffscreenDocument(): Promise<void> {
@@ -130,6 +169,81 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
   });
 }
 
+async function beginRecording(input: {
+  streamId: string;
+  meetingTitle: string;
+  settings: ExtensionSettings;
+  tabId: number;
+}): Promise<void> {
+  await ensureOffscreenDocument();
+  recordingStartTime = Date.now();
+  meetTabId = input.tabId;
+  currentMeetingTitle = input.meetingTitle;
+  currentSettings = input.settings;
+
+  chrome.tabs.sendMessage(
+    meetTabId,
+    { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
+    () => {
+      // 話者追跡は補助機能のため、content scriptが不在でも録音開始は継続する。
+      void chrome.runtime.lastError;
+    },
+  );
+
+  const result = await startOffscreenRecording({ ...input, recordingStartTime });
+  if (!result?.ok) throw new Error(result?.error ?? "Offscreen録音を開始できませんでした");
+  await setState("recording");
+}
+
+async function startRecordingFromAction(
+  tab: chrome.tabs.Tab,
+  streamId: Promise<string>,
+): Promise<void> {
+  if (!tab.id || !tab.url?.startsWith("https://meet.google.com/")) {
+    throw new Error("Google Meet のタブを選択してから拡張機能アイコンをクリックしてください");
+  }
+
+  let meetingTitle = "Google Meet";
+  try {
+    const titleRes = await chrome.tabs.sendMessage(tab.id, { type: "GET_MEETING_TITLE" });
+    meetingTitle = (titleRes as { title?: string } | undefined)?.title ?? meetingTitle;
+  } catch {
+    // content scriptが応答しない場合もタブの録音は開始できる。
+  }
+
+  const [resolvedStreamId, storedSettings] = await Promise.all([
+    streamId,
+    chrome.storage.sync.get(DEFAULT_SETTINGS),
+  ]);
+  await beginRecording({
+    streamId: resolvedStreamId,
+    meetingTitle,
+    settings: storedSettings as ExtensionSettings,
+    tabId: tab.id,
+  });
+}
+
+chrome.action.onClicked.addListener((tab) => {
+  const panelTarget = tab.id ? { tabId: tab.id } : tab.windowId ? { windowId: tab.windowId } : null;
+  if (panelTarget) chrome.sidePanel.open(panelTarget).catch(reportBackgroundError);
+
+  if (currentState !== "idle" && currentState !== "done" && currentState !== "error") return;
+
+  if (!tab.id || !tab.url?.startsWith("https://meet.google.com/")) {
+    setState("error", {
+      message: "Google Meet のタブを選択してから拡張機能アイコンをクリックしてください",
+    }).catch(reportBackgroundError);
+    return;
+  }
+
+  // stream IDは拡張機能アイコンのユーザー操作中に取得を開始する必要がある。
+  const streamId = getTabMediaStreamId(tab.id);
+  startRecordingFromAction(tab, streamId).catch(async (error: unknown) => {
+    console.error("録音開始に失敗しました", error);
+    await setState("error", { message: toRecordingStartErrorMessage(error) });
+  });
+});
+
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   await setState("summarizing", { recordingId });
   if (!currentSettings) throw new Error("録音設定を取得できませんでした");
@@ -178,25 +292,10 @@ subscribeBackgroundRecordingCommands({
   start(input, respond) {
     (async () => {
       try {
-        await ensureOffscreenDocument();
-        recordingStartTime = Date.now();
-        meetTabId = input.tabId;
-        currentMeetingTitle = input.meetingTitle;
-        currentSettings = input.settings;
-
-        if (meetTabId) {
-          chrome.tabs.sendMessage(
-            meetTabId,
-            { type: "START_SPEAKER_TRACKING", payload: { recordingStartTime } },
-            () => {},
-          );
-        }
-
-        const result = await startOffscreenRecording({ ...input, recordingStartTime });
-        if (!result?.ok) throw new Error(result?.error ?? "Offscreen録音を開始できませんでした");
-        await setState("recording");
+        await beginRecording(input);
         respond({ ok: true });
       } catch (err) {
+        console.error("録音開始に失敗しました", err);
         const message = toRecordingStartErrorMessage(err);
         await setState("error", { message }).catch(console.error);
         respond({ ok: false, error: message });

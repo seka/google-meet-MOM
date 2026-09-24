@@ -6,15 +6,27 @@ type MessageHandler = (
   sender: chrome.runtime.MessageSender,
   sendResponse: SendResponse,
 ) => boolean;
+type ActionHandler = (tab: chrome.tabs.Tab) => void;
 
 // test-setup.ts が先に chrome をスタブしている。
 // onMessage.addListener の実装を差し替え、background モジュールが登録するハンドラを捕捉する。
 const bgHandlers: MessageHandler[] = [];
+let actionHandler: ActionHandler | undefined;
+let configuredPanelBehavior: chrome.sidePanel.PanelBehavior | undefined;
 (chrome.runtime.onMessage.addListener as ReturnType<typeof vi.fn>).mockImplementation(
   (fn: MessageHandler) => {
     bgHandlers.push(fn);
   },
 );
+(chrome.action.onClicked.addListener as ReturnType<typeof vi.fn>).mockImplementation(
+  (fn: ActionHandler) => {
+    actionHandler = fn;
+  },
+);
+(chrome.sidePanel.setPanelBehavior as ReturnType<typeof vi.fn>).mockImplementation((behavior) => {
+  configuredPanelBehavior = behavior;
+  return Promise.resolve();
+});
 
 function bgHandler(
   message: unknown,
@@ -32,6 +44,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   (chrome.runtime.getContexts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   (chrome.offscreen.createDocument as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+  (chrome.tabCapture.getMediaStreamId as ReturnType<typeof vi.fn>).mockImplementation(
+    (_options: unknown, callback: (streamId: string) => void) => callback("action-stream"),
+  );
+  (chrome.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue(DEFAULT_SETTINGS);
+  (chrome.sidePanel.open as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
   (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
     (_msg: unknown, cb?: (response: unknown) => void) => {
       cb?.({ ok: true });
@@ -51,6 +68,35 @@ const BASE_PAYLOAD = {
   settings: DEFAULT_SETTINGS,
   tabId: 42,
 } as const;
+
+describe("action click", () => {
+  it("Meetタブ上のアイコンクリックでstream IDを取得して録音を開始する", async () => {
+    actionHandler?.({
+      id: 42,
+      windowId: 7,
+      url: "https://meet.google.com/abc-defg-hij",
+    } as chrome.tabs.Tab);
+
+    await vi.waitFor(() =>
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "FORWARD_TO_OFFSCREEN",
+          payload: expect.objectContaining({ streamId: "action-stream", tabId: 42 }),
+        }),
+        expect.any(Function),
+      ),
+    );
+
+    expect(chrome.tabCapture.getMediaStreamId).toHaveBeenCalledWith(
+      { targetTabId: 42 },
+      expect.any(Function),
+    );
+    expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });
+    expect(configuredPanelBehavior).toEqual({
+      openPanelOnActionClick: false,
+    });
+  });
+});
 
 describe("START_RECORDING", () => {
   it("サイドパネルで取得した streamId を offscreen へ転送する", async () => {
@@ -75,6 +121,46 @@ describe("START_RECORDING", () => {
       }),
       expect.any(Function),
     );
+  });
+
+  it("offscreenのready応答を待ってからstreamIdを転送する", async () => {
+    let readyAttempts = 0;
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
+      (message: unknown, callback?: (response: unknown) => void) => {
+        const type = (message as { type?: string }).type;
+        if (type === "OFFSCREEN_RECORDING_READY") {
+          readyAttempts += 1;
+          if (readyAttempts === 1) {
+            (chrome.runtime as unknown as Record<string, unknown>).lastError = {
+              message: "Receiving end does not exist",
+            };
+            callback?.(undefined);
+            (chrome.runtime as unknown as Record<string, unknown>).lastError = undefined;
+            return;
+          }
+        }
+        callback?.({ ok: true });
+      },
+    );
+
+    const sendResponse = vi.fn();
+    bgHandler(
+      { type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD },
+      {} as chrome.runtime.MessageSender,
+      sendResponse,
+    );
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({ ok: true }));
+    expect(readyAttempts).toBe(2);
+
+    const messages = (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mock.calls
+      .map(([message]) => (message as { type?: string }).type)
+      .filter((type) => type === "OFFSCREEN_RECORDING_READY" || type === "FORWARD_TO_OFFSCREEN");
+    expect(messages).toEqual([
+      "OFFSCREEN_RECORDING_READY",
+      "OFFSCREEN_RECORDING_READY",
+      "FORWARD_TO_OFFSCREEN",
+    ]);
   });
 });
 
