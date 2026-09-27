@@ -70,28 +70,16 @@ const BASE_PAYLOAD = {
 } as const;
 
 describe("action click", () => {
-  it("Meetタブ上のアイコンクリックでstream IDを取得して録音を開始する", async () => {
+  it("アイコンクリックで録音を開始せずサイドパネルを開く", () => {
     actionHandler?.({
       id: 42,
       windowId: 7,
       url: "https://meet.google.com/abc-defg-hij",
     } as chrome.tabs.Tab);
 
-    await vi.waitFor(() =>
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "FORWARD_TO_OFFSCREEN",
-          payload: expect.objectContaining({ streamId: "action-stream", tabId: 42 }),
-        }),
-        expect.any(Function),
-      ),
-    );
-
-    expect(chrome.tabCapture.getMediaStreamId).toHaveBeenCalledWith(
-      { targetTabId: 42 },
-      expect.any(Function),
-    );
     expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });
+    expect(chrome.tabCapture.getMediaStreamId).not.toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
     expect(configuredPanelBehavior).toEqual({
       openPanelOnActionClick: false,
     });
