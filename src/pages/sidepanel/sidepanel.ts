@@ -11,8 +11,12 @@ import {
   subscribeRecordingStateChanged,
 } from "@data/recording";
 import { subscribeTranscriptionEvents } from "@data/transcription";
+import { downloadRuntimeUrl } from "@data/file-download";
+import { getRecording } from "../../db";
+import { buildMinutesMarkdown, buildOutputFilename } from "@core/io/file_writer";
 
 let currentState: RecordingState = "idle";
+let currentRecordingId: string | null = null;
 
 function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -43,6 +47,23 @@ function updateUI(state: RecordingState, message = ""): void {
   recordingControls.render(state, message);
 }
 
+async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+  const url = URL.createObjectURL(blob);
+  try {
+    const result = await downloadRuntimeUrl(url, filename);
+    if (!result?.ok) throw new Error(result?.error ?? "ファイルを保存できませんでした");
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+}
+
+async function getCurrentRecording() {
+  if (!currentRecordingId) throw new Error("保存済みの録音が見つかりません");
+  const recording = await getRecording(currentRecordingId);
+  if (!recording) throw new Error("保存済みの録音が見つかりません");
+  return recording;
+}
+
 async function toggleRecording(): Promise<void> {
   if (currentState === "recording") {
     try {
@@ -58,6 +79,7 @@ async function toggleRecording(): Promise<void> {
 
   recordingLog.reset();
   recordingResult.reset();
+  currentRecordingId = null;
 
   const streamIdPromise = chooseTabMediaStreamId();
 
@@ -99,7 +121,45 @@ const recordingControls = createRecordingControls(() => {
   void toggleRecording();
 });
 const recordingLog = createRecordingLog();
-const recordingResult = createRecordingResult((message) => updateUI("error", message));
+const recordingResult = createRecordingResult((message) => updateUI("error", message), {
+  async recording() {
+    const recording = await getCurrentRecording();
+    const filename = buildOutputFilename({
+      meetingTitle: recording.meetingTitle,
+      date: recording.date,
+      kind: "recording",
+      extension: "webm",
+    });
+    await downloadBlob(recording.audioBlob, filename);
+  },
+  async transcript(text) {
+    if (!text) throw new Error("文字起こしがありません");
+    const recording = await getCurrentRecording();
+    const filename = buildOutputFilename({
+      meetingTitle: recording.meetingTitle,
+      date: recording.date,
+      kind: "transcript",
+      extension: "txt",
+    });
+    await downloadBlob(new Blob([text], { type: "text/plain;charset=utf-8" }), filename);
+  },
+  async minutes(text) {
+    if (!text) throw new Error("議事録がありません");
+    const recording = await getCurrentRecording();
+    const filename = buildOutputFilename({
+      meetingTitle: recording.meetingTitle,
+      date: recording.date,
+      kind: "minutes",
+      extension: "md",
+    });
+    const markdown = buildMinutesMarkdown({
+      meetingTitle: recording.meetingTitle,
+      generatedAt: recording.date,
+      minutes: text,
+    });
+    await downloadBlob(new Blob([markdown], { type: "text/markdown;charset=utf-8" }), filename);
+  },
+});
 
 const openOptions = document.getElementById("open-options") as HTMLAnchorElement;
 openOptions.addEventListener("click", (e) => {
@@ -113,12 +173,14 @@ subscribeTranscriptionEvents({
   chunk(text) {
     recordingLog.append(text);
   },
-  completed(transcript) {
+  completed(transcript, recordingId) {
+    currentRecordingId = recordingId;
     recordingResult.showTranscript(transcript);
   },
 });
 
-subscribeRecordingStateChanged(({ state, minutes, message }) => {
+subscribeRecordingStateChanged(({ state, recordingId, minutes, message }) => {
+  if (recordingId) currentRecordingId = recordingId;
   updateUI(state, message ?? "");
 
   if (state === "done" && minutes) {
@@ -128,7 +190,10 @@ subscribeRecordingStateChanged(({ state, minutes, message }) => {
 
 getRecordingState()
   .then((response) => {
-    if (response) updateUI(response.state);
+    if (response) {
+      currentRecordingId = response.recordingId ?? null;
+      updateUI(response.state);
+    }
   })
   .catch(() => {});
 

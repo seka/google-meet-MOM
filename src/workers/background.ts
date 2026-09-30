@@ -19,16 +19,10 @@ import {
   generateMinutes,
   toMinutesErrorMessage,
 } from "../data/minutes";
-import {
-  buildMinutesMarkdown,
-  buildOutputFilename,
-  downloadTextFile,
-  downloadUrlFile,
-} from "@core/io/file_writer";
+import { downloadUrlFile } from "@core/io/file_writer";
 
 let currentState: RecordingState = "idle";
 let currentRecordingId: string | null = null;
-let currentMeetingTitle = "Google Meet";
 let recordingStartTime = 0;
 let meetTabId: number | null = null;
 let currentSettings: ExtensionSettings | null = null;
@@ -133,8 +127,6 @@ async function collectSpeakerEvents(): Promise<SpeakerEvent[]> {
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
   await setState("summarizing", { recordingId });
   if (!currentSettings) throw new Error("録音設定を取得できませんでした");
-  const generatedAt = new Date().toISOString();
-
   try {
     const minutes = await generateMinutes({
       ollamaUrl: currentSettings.ollamaUrl,
@@ -143,30 +135,6 @@ async function generateAndSaveMinutes(transcript: string, recordingId: string): 
     });
 
     await updateRecording(recordingId, { minutes });
-
-    if (currentSettings.minutesOutputDestination === "download") {
-      const filename = buildOutputFilename({
-        meetingTitle: currentMeetingTitle,
-        date: generatedAt,
-        kind: "minutes",
-        extension: "md",
-      });
-      const markdown = buildMinutesMarkdown({
-        meetingTitle: currentMeetingTitle,
-        generatedAt,
-        minutes,
-      });
-
-      try {
-        await downloadTextFile({
-          text: markdown,
-          filename,
-          mimeType: "text/markdown",
-        });
-      } catch {
-        // ファイル保存が失敗しても、生成済みの議事録とブラウザ内保存は維持する。
-      }
-    }
 
     await setState("done", { recordingId, minutes });
   } catch (err) {
@@ -181,7 +149,6 @@ subscribeBackgroundRecordingCommands({
         await ensureOffscreenDocument();
         recordingStartTime = Date.now();
         meetTabId = input.tabId;
-        currentMeetingTitle = input.meetingTitle;
         currentSettings = input.settings;
 
         if (meetTabId) {

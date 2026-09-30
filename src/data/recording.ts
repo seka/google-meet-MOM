@@ -15,8 +15,6 @@ export interface RuntimeRecordingSettings {
   whisperModel: string;
   language: string;
   chunkIntervalSec: number;
-  minutesOutputDestination: "local" | "download";
-  recordingOutputDestination: "local" | "download";
   appearance: "system" | "light" | "dark";
 }
 

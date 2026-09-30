@@ -6,14 +6,21 @@ export interface RecordingResult {
   showTranscript(transcript: string): void;
 }
 
-export function createRecordingResult(onError: (message: string) => void): RecordingResult {
+interface RecordingResultDownloads {
+  recording(): Promise<void>;
+  transcript(text: string): Promise<void>;
+  minutes(text: string): Promise<void>;
+}
+
+export function createRecordingResult(
+  onError: (message: string) => void,
+  downloads: RecordingResultDownloads,
+): RecordingResult {
   const transcriptText = document.getElementById("transcript-text") as HTMLPreElement;
   const minutesText = document.getElementById("minutes-text") as HTMLPreElement;
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".tab"));
-  let currentTab: ResultTab = "transcript";
 
   function switchTab(tab: ResultTab): void {
-    currentTab = tab;
     tabs.forEach((element) => {
       element.classList.toggle("active", element.dataset.tab === tab);
     });
@@ -23,41 +30,46 @@ export function createRecordingResult(onError: (message: string) => void): Recor
     minutesTab.hidden = tab !== "minutes";
   }
 
-  function currentText(): string {
-    return currentTab === "transcript"
-      ? (transcriptText.textContent ?? "")
-      : (minutesText.textContent ?? "");
-  }
-
   tabs.forEach((button) => {
     button.addEventListener("click", () => {
       switchTab(button.dataset.tab as ResultTab);
     });
   });
 
-  const copyButton = document.getElementById("copy-btn") as HTMLButtonElement;
-  copyButton.addEventListener("click", () => {
-    const text = currentText();
+  function copyText(text: string): void {
     if (!text) return;
     navigator.clipboard.writeText(text).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       onError(`コピーに失敗しました: ${message}`);
     });
-  });
+  }
 
-  const downloadButton = document.getElementById("download-btn") as HTMLButtonElement;
-  downloadButton.addEventListener("click", () => {
-    const text = currentText();
-    if (!text) return;
-    const filename = currentTab === "transcript" ? "transcript.txt" : "minutes.md";
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  });
+  function runDownload(download: () => Promise<void>): void {
+    download().catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      onError(`ダウンロードに失敗しました: ${message}`);
+    });
+  }
+
+  (document.getElementById("copy-transcript-btn") as HTMLButtonElement).addEventListener(
+    "click",
+    () => copyText(transcriptText.textContent ?? ""),
+  );
+  (document.getElementById("copy-minutes-btn") as HTMLButtonElement).addEventListener("click", () =>
+    copyText(minutesText.textContent ?? ""),
+  );
+  (document.getElementById("download-transcript-btn") as HTMLButtonElement).addEventListener(
+    "click",
+    () => runDownload(() => downloads.transcript(transcriptText.textContent ?? "")),
+  );
+  (document.getElementById("download-minutes-btn") as HTMLButtonElement).addEventListener(
+    "click",
+    () => runDownload(() => downloads.minutes(minutesText.textContent ?? "")),
+  );
+  (document.getElementById("download-recording-btn") as HTMLButtonElement).addEventListener(
+    "click",
+    () => runDownload(() => downloads.recording()),
+  );
 
   const resultSection = document.getElementById("result-section") as HTMLElement;
   return {
