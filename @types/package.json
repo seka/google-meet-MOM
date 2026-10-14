@@ -1,0 +1,9 @@
+{
+  "name": "@google-meet-mom/types",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "*.d.ts"
+  ],
+  "types": "index.d.ts"
+}

@@ -6,7 +6,7 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["ES2020", "DOM"],
-    "types": ["chrome"],
+    "types": ["chrome", "@google-meet-mom/types"],
     "paths": {
       "@core/*": ["./src/core/*"],
       "@data/*": ["./src/data/*"],
