@@ -2,9 +2,6 @@
   "name": "google-meet-mom",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "@types"
-  ],
   "scripts": {
     "dev": "vp build --watch",
     "build": "vp build",
@@ -16,7 +13,6 @@
     "@huggingface/transformers": "^3.0.0"
   },
   "devDependencies": {
-    "@google-meet-mom/types": "0.1.0",
     "@types/chrome": "^0.0.268",
     "@vitest/browser-playwright": "4.1.9",
     "happy-dom": "^20.10.6",

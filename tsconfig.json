@@ -6,13 +6,13 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["ES2020", "DOM"],
-    "types": ["chrome", "@google-meet-mom/types"],
+    "types": ["chrome"],
     "paths": {
       "@core/*": ["./src/core/*"],
       "@data/*": ["./src/data/*"],
       "@features/*": ["./src/features/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "@types/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
