@@ -11,12 +11,6 @@ export function initializeSettingsForm(): void {
   const whisperModel = document.getElementById("whisper-model") as HTMLSelectElement;
   const language = document.getElementById("language") as HTMLSelectElement;
   const chunkInterval = document.getElementById("chunk-interval") as HTMLSelectElement;
-  const minutesOutputDestination = document.getElementById(
-    "minutes-output-destination",
-  ) as HTMLSelectElement;
-  const recordingOutputDestination = document.getElementById(
-    "recording-output-destination",
-  ) as HTMLSelectElement;
   const appearance = document.getElementById("appearance") as HTMLSelectElement;
   const saveBtn = document.getElementById("save-btn") as HTMLButtonElement;
   const savedMsg = document.getElementById("saved-msg") as HTMLSpanElement;
@@ -28,8 +22,6 @@ export function initializeSettingsForm(): void {
     whisperModel.value = settings["whisperModel"] as string;
     language.value = settings["language"] as string;
     chunkInterval.value = String(settings["chunkIntervalSec"]);
-    minutesOutputDestination.value = settings["minutesOutputDestination"] as string;
-    recordingOutputDestination.value = settings["recordingOutputDestination"] as string;
     appearance.value = normalizeAppearance(settings["appearance"]);
     applyAppearance(normalizeAppearance(settings["appearance"]));
   }
@@ -43,8 +35,6 @@ export function initializeSettingsForm(): void {
       whisperModel: whisperModel.value,
       language: language.value,
       chunkIntervalSec: Number(chunkInterval.value),
-      minutesOutputDestination: minutesOutputDestination.value,
-      recordingOutputDestination: recordingOutputDestination.value,
       appearance: selectedAppearance,
     });
 

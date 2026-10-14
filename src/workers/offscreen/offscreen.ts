@@ -7,12 +7,10 @@ import {
   publishTranscriptionProgress,
 } from "@data/transcription";
 import { subscribeOffscreenConnectionTests } from "@data/connection-test";
-import { downloadRuntimeUrl } from "@data/file-download";
 import type { SpeakerEvent } from "@features/recording/types";
 import type { ExtensionSettings } from "@features/settings/types";
 import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
-import { buildOutputFilename } from "@core/io/file_writer";
 import { RecordingSession } from "@features/recording/models/recording-session";
 import { getTabAudioStream } from "@features/recording/models/tab-audio-stream";
 import { WhisperClient } from "@core/api/whisper/client";
@@ -46,22 +44,6 @@ function reportOffscreenError(err: unknown, sendResponse?: (response?: unknown) 
 
 function sendWhisperProgress(progress: number): void {
   publishTranscriptionProgress(progress).catch(console.error);
-}
-
-function downloadRecordingBlob(blob: Blob, filename: string): Promise<void> {
-  const url = URL.createObjectURL(blob);
-
-  return downloadRuntimeUrl(url, filename)
-    .then((result) => {
-      if (!result?.ok) {
-        throw new Error(result?.error ?? "録音ファイルを保存できませんでした");
-      }
-    })
-    .finally(() => {
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 60_000);
-    });
 }
 
 // 設定間隔ごとに蓄積チャンクを処理してサイドパネルへ送信
@@ -147,21 +129,6 @@ async function stopAndTranscribe(
     transcript: "",
     minutes: "",
   });
-
-  if (settings.recordingOutputDestination === "download") {
-    const filename = buildOutputFilename({
-      meetingTitle: currentMeetingTitle,
-      date: savedAt,
-      kind: "recording",
-      extension: "webm",
-    });
-
-    try {
-      await downloadRecordingBlob(audioBlob, filename);
-    } catch {
-      // ファイル保存が失敗しても、ブラウザ内保存と文字起こしは継続する。
-    }
-  }
 
   await publishRecordingSaved(recordingId);
 
