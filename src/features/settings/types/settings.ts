@@ -1,4 +1,3 @@
-export type OutputDestination = "local" | "download";
 export type Appearance = "system" | "light" | "dark";
 
 export interface ExtensionSettings {
@@ -7,8 +6,6 @@ export interface ExtensionSettings {
   whisperModel: string;
   language: string;
   chunkIntervalSec: number;
-  minutesOutputDestination: OutputDestination;
-  recordingOutputDestination: OutputDestination;
   appearance: Appearance;
 }
 
@@ -18,7 +15,5 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   whisperModel: "onnx-community/whisper-tiny",
   language: "ja",
   chunkIntervalSec: 15,
-  minutesOutputDestination: "local",
-  recordingOutputDestination: "local",
   appearance: "system",
 };

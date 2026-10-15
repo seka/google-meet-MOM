@@ -48,44 +48,26 @@
 
         <div id="transcript-tab" class="tab-content">
           <pre id="transcript-text"></pre>
+          <div class="actions">
+            <button id="copy-transcript-btn" class="btn btn-secondary">文字起こしをコピー</button>
+            <button id="download-transcript-btn" class="btn btn-secondary">
+              文字起こしをダウンロード
+            </button>
+          </div>
         </div>
         <div id="minutes-tab" class="tab-content" hidden>
           <pre id="minutes-text"></pre>
+          <div class="actions">
+            <button id="copy-minutes-btn" class="btn btn-secondary">議事録をコピー</button>
+            <button id="download-minutes-btn" class="btn btn-secondary">
+              議事録をダウンロード
+            </button>
+          </div>
         </div>
 
         <div class="actions">
-          <button id="copy-btn" class="btn btn-secondary">
-            <svg
-              class="icon"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-            </svg>
-            コピー
-          </button>
-          <button id="download-btn" class="btn btn-secondary">
-            <svg
-              class="icon"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" x2="12" y1="15" y2="3" />
-            </svg>
-            ダウンロード
+          <button id="download-recording-btn" class="btn btn-secondary">
+            録音音声をダウンロード
           </button>
         </div>
       </section>
