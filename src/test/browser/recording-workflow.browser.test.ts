@@ -5,6 +5,8 @@ import { createExtensionHarness } from "./extension-harness";
 
 const transcript = "田中: 来週までに資料を準備します。";
 const minutes = "## 決定事項\n来週までに資料を準備する。";
+const recordedAt = "2026-10-17T03:00:00.000Z";
+const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3]);
 let harness: ReturnType<typeof createExtensionHarness>;
 let recordingId: string;
 const fetchMock = vi.fn<typeof fetch>();
@@ -17,6 +19,18 @@ function button(id: string): HTMLButtonElement {
 
 async function waitForState(label: string) {
   await vi.waitFor(() => expect(document.getElementById("status-label")?.textContent).toBe(label));
+}
+
+async function download(id: string, filename: RegExp): Promise<Response> {
+  const calls = harness.chrome.downloads.download.mock.calls.length;
+  button(id).click();
+  await vi.waitFor(() =>
+    expect(harness.chrome.downloads.download).toHaveBeenCalledTimes(calls + 1),
+  );
+  const options = harness.chrome.downloads.download.mock.calls[calls][0];
+  expect(options.saveAs).toBe(true);
+  expect(options.filename).toMatch(filename);
+  return browserFetch(options.url);
 }
 
 beforeAll(async () => {
@@ -32,9 +46,9 @@ beforeAll(async () => {
   await waitForState("待機中");
   recordingId = await saveRecording({
     meetingTitle: "テスト会議",
-    date: new Date().toISOString(),
+    date: recordedAt,
     duration: 1,
-    audioBlob: new Blob(["test audio"]),
+    audioBlob: new Blob([audio], { type: "audio/webm;codecs=opus" }),
     transcript,
     minutes: "",
   });
@@ -83,27 +97,63 @@ it("録音開始から明示保存まで進み、生成失敗と再録音時の�
   );
   expect(harness.chrome.downloads.download).not.toHaveBeenCalled();
 
-  button("download-transcript-btn").click();
-  await vi.waitFor(() => expect(harness.chrome.downloads.download).toHaveBeenCalledOnce());
-  const options = harness.chrome.downloads.download.mock.calls[0][0];
-  expect(options.saveAs).toBe(true);
-  expect(options.filename).toMatch(/_transcript\.txt$/);
-  expect(await (await browserFetch(options.url)).text()).toBe(transcript);
+  expect(
+    await (await download("download-transcript-btn", /_テスト会議_transcript\.txt$/)).text(),
+  ).toBe(transcript);
+  const firstAudio = await download("download-recording-btn", /_テスト会議_recording\.webm$/);
+  expect(new Uint8Array(await firstAudio.arrayBuffer())).toEqual(audio);
+  document.querySelector<HTMLButtonElement>('[data-tab="minutes"]')!.click();
+  expect(document.getElementById("minutes-tab")!.hidden).toBe(false);
+  expect(await (await download("download-minutes-btn", /_テスト会議_minutes\.md$/)).text()).toBe(
+    `# テスト会議\n\n生成日時: ${recordedAt}\n\n${minutes}`,
+  );
+
+  const firstRecord = await getRecording(recordingId);
+  const secondTranscript = "佐藤: 次回は金曜日に進捗を確認します。";
+  const secondAudio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 8, 7]);
   fetchMock.mockResolvedValue(new Response("", { status: 403, statusText: "Forbidden" }));
   button("record-btn").click();
   await waitForState("録音中");
+  expect(document.getElementById("transcript-text")?.textContent).toBe("");
+  expect(document.getElementById("minutes-text")?.textContent).toBe("");
   button("record-btn").click();
   await waitForState("文字起こし中");
+  const secondRecordingId = await saveRecording({
+    meetingTitle: "次回会議",
+    date: "2026-10-18T03:00:00.000Z",
+    duration: 2,
+    audioBlob: new Blob([secondAudio], { type: "audio/webm;codecs=opus" }),
+    transcript: secondTranscript,
+    minutes: "",
+  });
+  expect(secondRecordingId).not.toBe(recordingId);
+  const downloadCount = harness.chrome.downloads.download.mock.calls.length;
   harness.dispatch({
     type: "TRANSCRIPTION_DONE",
     target: "background",
-    payload: { transcript, recordingId },
+    payload: { transcript: secondTranscript, recordingId: secondRecordingId },
   });
   await waitForState("エラー");
   expect(document.getElementById("status-message")?.textContent).toContain(
     "Ollama API: 403 Forbidden",
   );
-  expect(document.getElementById("transcript-text")?.textContent).toBe(transcript);
+  expect(document.getElementById("transcript-text")?.textContent).toBe(secondTranscript);
+  expect(harness.chrome.downloads.download).toHaveBeenCalledTimes(downloadCount);
+  expect(
+    await (await download("download-transcript-btn", /_次回会議_transcript\.txt$/)).text(),
+  ).toBe(secondTranscript);
+  expect(
+    new Uint8Array(
+      await (await download("download-recording-btn", /_次回会議_recording\.webm$/)).arrayBuffer(),
+    ),
+  ).toEqual(secondAudio);
+  const secondRecord = await getRecording(secondRecordingId);
+  expect(secondRecord?.transcript).toBe(secondTranscript);
+  expect(secondRecord?.minutes).toBe("");
+  expect(await getRecording(recordingId)).toEqual(firstRecord);
+  expect(new Uint8Array(await (await getRecording(recordingId))!.audioBlob.arrayBuffer())).toEqual(
+    audio,
+  );
   expect(button("record-btn").disabled).toBe(false);
   harness.setCaptureError("Extension has not been invoked for the current page");
   const count = harness.offscreenMessages.length;
