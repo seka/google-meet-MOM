@@ -13,7 +13,7 @@ describe("getTabAudioStream", () => {
     expect(getUserMedia).toHaveBeenCalledWith({
       audio: {
         mandatory: {
-          chromeMediaSource: "desktop",
+          chromeMediaSource: "tab",
           chromeMediaSourceId: "stream-123",
         },
       },

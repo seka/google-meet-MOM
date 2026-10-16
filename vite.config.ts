@@ -51,9 +51,25 @@ export default defineConfig({
     // Chrome Extension では生成された modulepreload が再利用されず警告になるため無効化する。
     modulePreload: false,
     rollupOptions: {
+      plugins: [
+        {
+          name: "assert-classic-content-script",
+          generateBundle(_options, bundle) {
+            const contentScript = bundle["meeting-observer.js"];
+            if (
+              contentScript?.type === "chunk" &&
+              (contentScript.imports.length > 0 || contentScript.dynamicImports.length > 0)
+            ) {
+              this.error(
+                "meeting-observer.js must not contain imports because Chrome loads it as a classic script",
+              );
+            }
+          },
+        },
+      ],
       input: {
         background: resolve(__dirname, "src/workers/background.ts"),
-        content: resolve(__dirname, "src/workers/content.ts"),
+        "meeting-observer": resolve(__dirname, "src/page-scripts/meeting-observer.ts"),
         offscreen: resolve(__dirname, "src/workers/offscreen/offscreen.html"),
         sidepanel: resolve(__dirname, "src/pages/sidepanel/sidepanel.html"),
         options: resolve(__dirname, "src/pages/options/options.html"),

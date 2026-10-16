@@ -22,22 +22,18 @@ function toErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function chooseTabMediaStreamId(): Promise<string> {
+function getTabMediaStreamId(): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-    chrome.desktopCapture.chooseDesktopMedia(["tab", "audio"], (id, options) => {
+    chrome.tabCapture.getMediaStreamId({}, (streamId) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
       }
-      if (!id) {
-        reject(new Error("タブの選択がキャンセルされました"));
+      if (!streamId) {
+        reject(new Error("録音用ストリーム ID を取得できませんでした"));
         return;
       }
-      if (!options.canRequestAudioTrack) {
-        reject(new Error("選択したタブの音声共有を有効にしてください"));
-        return;
-      }
-      resolve(id);
+      resolve(streamId);
     });
   });
 }
@@ -81,7 +77,7 @@ async function toggleRecording(): Promise<void> {
   recordingResult.reset();
   currentRecordingId = null;
 
-  const streamIdPromise = chooseTabMediaStreamId();
+  const streamId = getTabMediaStreamId();
 
   try {
     const [meetTab] = await chrome.tabs.query({
@@ -91,7 +87,7 @@ async function toggleRecording(): Promise<void> {
     });
 
     if (!meetTab?.id) {
-      await streamIdPromise.catch(() => {});
+      await streamId.catch(() => {});
       updateUI("error", "Google Meet のタブが見つかりません");
       return;
     }
@@ -99,18 +95,21 @@ async function toggleRecording(): Promise<void> {
     let meetingTitle = "Google Meet";
     try {
       const titleRes = await chrome.tabs.sendMessage(meetTab.id, { type: "GET_MEETING_TITLE" });
-      meetingTitle = (titleRes as { title: string })?.title ?? meetingTitle;
+      meetingTitle = (titleRes as { title?: string } | undefined)?.title ?? meetingTitle;
     } catch {
-      // content script が応答しない場合はスキップ
+      // content scriptが応答しない場合もタブの録音は開始できる。
     }
 
-    const [streamId, storedSettings] = await Promise.all([
-      streamIdPromise,
+    const [resolvedStreamId, storedSettings] = await Promise.all([
+      streamId,
       chrome.storage.sync.get(DEFAULT_SETTINGS),
     ]);
-    const settings = storedSettings as ExtensionSettings;
-
-    const result = await startRecording({ streamId, meetingTitle, settings, tabId: meetTab.id });
+    const result = await startRecording({
+      streamId: resolvedStreamId,
+      meetingTitle,
+      settings: storedSettings as ExtensionSettings,
+      tabId: meetTab.id,
+    });
     if (!result?.ok) throw new Error(result?.error ?? "録音を開始できませんでした");
   } catch (err) {
     updateUI("error", `録音対象タブをキャプチャできません: ${toErrorMessage(err)}`);

@@ -1,6 +1,7 @@
 import { DEFAULT_SETTINGS } from "../../types";
-import { testOllamaConnection, testWhisperConnection } from "@data/connection-test";
+import { testWhisperConnection } from "@data/connection-test";
 import { subscribeTranscriptionEvents } from "@data/transcription";
+import { assertMinutesModelAvailable } from "@data/minutes";
 
 interface RecordingSession {
   audioCtx: AudioContext;
@@ -28,13 +29,11 @@ export function initializeConnectionTest(): void {
     ollamaTestStatus.textContent = "確認中...";
 
     try {
-      const result = await testOllamaConnection({
-        ollamaUrl: ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
-        ollamaModel: ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
-      });
-      ollamaTestStatus.textContent = result?.ok
-        ? "接続できました"
-        : `エラー: ${result?.error ?? "不明なエラー"}`;
+      await assertMinutesModelAvailable(
+        ollamaUrl.value.trim() || DEFAULT_SETTINGS.ollamaUrl,
+        ollamaModel.value.trim() || DEFAULT_SETTINGS.ollamaModel,
+      );
+      ollamaTestStatus.textContent = "接続できました";
     } catch (err) {
       ollamaTestStatus.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vite-plus/test";
-import { getMeetingTitle, getActiveSpeaker } from "./content";
+import { getMeetingTitle, getActiveSpeaker } from "./meeting-observer";
 
 beforeEach(() => {
   document.body.innerHTML = "";
