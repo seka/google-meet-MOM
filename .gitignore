@@ -5,3 +5,5 @@ dist/
 *.local
 
 docs/codebase/
+src/.vitest-attachments/
+src/**/__screenshots__/
