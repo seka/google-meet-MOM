@@ -55,13 +55,13 @@ export default defineConfig({
         {
           name: "assert-classic-content-script",
           generateBundle(_options, bundle) {
-            const contentScript = bundle["content.js"];
+            const contentScript = bundle["meeting-observer.js"];
             if (
               contentScript?.type === "chunk" &&
               (contentScript.imports.length > 0 || contentScript.dynamicImports.length > 0)
             ) {
               this.error(
-                "content.js must not contain imports because Chrome loads it as a classic script",
+                "meeting-observer.js must not contain imports because Chrome loads it as a classic script",
               );
             }
           },
@@ -69,7 +69,7 @@ export default defineConfig({
       ],
       input: {
         background: resolve(__dirname, "src/workers/background.ts"),
-        content: resolve(__dirname, "src/workers/content.ts"),
+        "meeting-observer": resolve(__dirname, "src/page-scripts/meeting-observer.ts"),
         offscreen: resolve(__dirname, "src/workers/offscreen/offscreen.html"),
         sidepanel: resolve(__dirname, "src/pages/sidepanel/sidepanel.html"),
         options: resolve(__dirname, "src/pages/options/options.html"),
