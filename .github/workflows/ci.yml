@@ -34,5 +34,16 @@ jobs:
       - name: Run tests
         run: vp test
 
+      - name: Upload browser test failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-failures
+          path: |
+            src/**/__screenshots__/**
+            src/.vitest-attachments/**
+          include-hidden-files: true
+          if-no-files-found: ignore
+
       - name: Build
         run: vp build
