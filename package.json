@@ -7,6 +7,7 @@
     "build": "vp build",
     "test": "vp test",
     "test:browser": "vp test run --project=browser",
+    "test:extension": "vp build && node --test scripts/test-extension.mjs",
     "prepare": "vp config"
   },
   "dependencies": {

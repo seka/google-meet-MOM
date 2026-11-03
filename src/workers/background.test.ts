@@ -152,6 +152,62 @@ describe("START_RECORDING", () => {
   });
 });
 
+describe("録音開始の失敗と復旧", () => {
+  it("offscreen作成失敗を返し、次回の録音開始を妨げない", async () => {
+    vi.mocked(chrome.offscreen.createDocument).mockRejectedValueOnce(
+      new Error("offscreen creation failed"),
+    );
+    const failed = vi.fn();
+    bgHandler({ type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD }, {}, failed);
+    await vi.waitFor(() =>
+      expect(failed).toHaveBeenCalledWith({ ok: false, error: "offscreen creation failed" }),
+    );
+    expect(
+      vi
+        .mocked(chrome.runtime.sendMessage as ReturnType<typeof vi.fn>)
+        .mock.calls.some(([message]) => message.type === "FORWARD_TO_OFFSCREEN"),
+    ).toBe(false);
+
+    const retried = vi.fn();
+    bgHandler(
+      { type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD },
+      {},
+      retried,
+    );
+    await vi.waitFor(() => expect(retried).toHaveBeenCalledWith({ ok: true }));
+  });
+
+  it("readyが返らない場合は再試行を打ち切り、streamIdを転送しない", async () => {
+    vi.useFakeTimers();
+    try {
+      (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
+        (message, callback) => {
+          callback?.(
+            message.type === "OFFSCREEN_RECORDING_READY"
+              ? { ok: false, error: "not ready" }
+              : { ok: true },
+          );
+        },
+      );
+      const respond = vi.fn();
+      bgHandler(
+        { type: "START_RECORDING", target: "background", payload: BASE_PAYLOAD },
+        {},
+        respond,
+      );
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(respond).toHaveBeenCalledWith({ ok: false, error: "not ready" });
+      const types = vi
+        .mocked(chrome.runtime.sendMessage as ReturnType<typeof vi.fn>)
+        .mock.calls.map(([message]) => message.type);
+      expect(types.filter((type) => type === "OFFSCREEN_RECORDING_READY")).toHaveLength(20);
+      expect(types).not.toContain("FORWARD_TO_OFFSCREEN");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("STOP_RECORDING", () => {
   it("OFFSCREEN_STOP を送信して sendResponse に ok:true を返す", async () => {
     const sendResponse = vi.fn();

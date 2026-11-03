@@ -34,6 +34,9 @@ jobs:
       - name: Run tests
         run: vp test
 
+      - name: Test built extension
+        run: npm run test:extension
+
       - name: Upload browser test failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -42,6 +45,7 @@ jobs:
           path: |
             src/**/__screenshots__/**
             src/.vitest-attachments/**
+            test-results/**
           include-hidden-files: true
           if-no-files-found: ignore
 
