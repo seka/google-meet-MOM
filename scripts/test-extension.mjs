@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 
+// 前提: distの実拡張を専用Chromiumへ読み込み、Chrome APIは置き換えない。
+// チェック内容: 状態取得・offscreenのready・拡張ページ再表示・開始失敗後の終了と再作成を行う。
+// 期待値: 待機/エラー状態が取得でき、offscreen再作成後もreadyが返る。
+// 通常の拡張ページを使うためSide Panel枠やactiveTab付与、正常なタブ録音は対象外。
 await test(
   "built extension communicates across panel, service worker and offscreen",
   { timeout: 45000 },

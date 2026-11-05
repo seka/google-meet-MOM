@@ -154,6 +154,9 @@ describe("START_RECORDING", () => {
 
 describe("録音開始の失敗と復旧", () => {
   it("offscreen作成失敗を返し、次回の録音開始を妨げない", async () => {
+    // 前提: offscreen作成APIが初回のみ失敗し、2回目は成功する。
+    // チェック内容: 初回のエラー応答と転送なしを確認し、再度開始コマンドを送る。
+    // 期待値: 初回は失敗理由を返し、再試行はok:trueを返す。実際の音声取得は対象外。
     vi.mocked(chrome.offscreen.createDocument).mockRejectedValueOnce(
       new Error("offscreen creation failed"),
     );
@@ -178,6 +181,9 @@ describe("録音開始の失敗と復旧", () => {
   });
 
   it("readyが返らない場合は再試行を打ち切り、streamIdを転送しない", async () => {
+    // 前提: ready確認には毎回ok:falseが返る。応答自体が来ないケースではない。
+    // チェック内容: 仮想時間を進め、確認回数と録音開始メッセージの有無を調べる。
+    // 期待値: 20回で失敗を返し、FORWARD_TO_OFFSCREENを送らない。
     vi.useFakeTimers();
     try {
       (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(

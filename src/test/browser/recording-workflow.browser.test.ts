@@ -61,6 +61,10 @@ afterAll(() => {
 });
 
 it("録音開始から明示保存まで進み、生成失敗と再録音時の権限拒否から復帰可能な状態を保つ", async () => {
+  // 前提: 本番の画面とbackgroundを接続し、Chrome API・offscreen・Ollama応答を置換する。
+  // チェック内容: 開始/停止、3種のダウンロード、別記録での再録音、403と権限拒否を順に操作する。
+  // 期待値: 保存内容が各記録と一致し、生成失敗後も新しい文字起こしが残り、初回記録は変わらない。
+  // 最後の権限拒否からの再試行成功は操作していないため、ここでは検証済みとしない。
   fetchMock.mockResolvedValue(Response.json({ message: { content: minutes } }));
   harness.clickAction();
   expect(harness.chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });

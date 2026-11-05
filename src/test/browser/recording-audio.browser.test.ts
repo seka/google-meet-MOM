@@ -2,6 +2,9 @@ import { expect, it } from "vite-plus/test";
 import { RecordingSession } from "@features/recording/models/recording-session";
 
 it("合成音声を実際のMediaRecorderで録音し、復号後にも音が残る", async () => {
+  // 前提: マイクの代わりに440Hzの合成音声を実際のRecordingSessionへ入力する。
+  // チェック内容: MediaRecorderの出力を復号し、長さと平均二乗振幅を調べる。
+  // 期待値: 0.1秒超の音声が保存され、平均二乗振幅が0.01超となる。
   const context = new AudioContext();
   const oscillator = context.createOscillator();
   const destination = context.createMediaStreamDestination();

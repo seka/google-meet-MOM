@@ -40,6 +40,8 @@ function send(message: unknown): Promise<{ ok: boolean; error?: string }> {
 }
 
 function amplitude(samples: Float32Array, sampleRate: number, frequency: number): number {
+  // 録音開始直後の揺れを避けるため、0.1〜0.3秒の区間を指定周波数のsin/cosへ射影する。
+  // 例えば440Hzを消した録音では440Hz側の振幅が低下し、片方だけの録音を検出できる。
   const start = Math.floor(sampleRate * 0.1);
   const length = Math.floor(sampleRate * 0.2);
   let real = 0;
@@ -61,6 +63,10 @@ afterAll(async () => {
 });
 
 it("本番offscreen処理がタブ音声440Hzとマイク音声880Hzを両方保存する", async () => {
+  // 前提: タブとマイクのgetUserMediaを別々の合成音声に置換し、Whisper推論だけ固定応答にする。
+  // チェック内容: 本番offscreen処理で録音・保存し、保存Blobを復号して周波数成分を調べる。
+  // 期待値: 440Hzと880Hzは各0.05超、入力していない1760Hzは0.03未満となる。
+  // 実デバイスの権限やtabCaptureによる音声取得は、このテストでは確認しない。
   vi.stubGlobal(
     "AudioContext",
     class extends NativeAudioContext {
