@@ -18,7 +18,7 @@ export async function getTabAudioStream(
   const stream = await mediaDevices.getUserMedia({ audio, video: false });
   const audioTracks = stream.getAudioTracks();
 
-  if (audioTracks.length === 0 || audioTracks.every((track) => track.readyState !== "live")) {
+  if (audioTracks.every((track) => track.readyState !== "live")) {
     stream.getTracks().forEach((track) => track.stop());
     throw new Error("選択したタブの音声トラックを取得できませんでした");
   }
