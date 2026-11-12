@@ -47,7 +47,7 @@ npx vp check         # Lint・型チェック
 npx vp check --fix   # フォーマット自動修正
 npm test             # ユニットテストとブラウザテスト
 npm run test:browser # Chromiumでブラウザテストのみ実行
-npm run test:extension # ビルドした拡張をChromiumへ読み込み、実際の拡張間通信を確認
+npm run test:integration:extension # ビルドした拡張をChromiumへ読み込み、拡張間通信の復旧シナリオを確認
 ```
 
 ブラウザテストを初めて実行する前に、Playwright 管理下の Chromium をインストールしてください。

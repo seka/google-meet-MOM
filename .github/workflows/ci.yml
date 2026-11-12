@@ -34,8 +34,8 @@ jobs:
       - name: Run tests
         run: vp test
 
-      - name: Test built extension
-        run: npm run test:extension
+      - name: Test built extension integration
+        run: npm run test:integration:extension
 
       - name: Upload browser test failure artifacts
         if: failure()
