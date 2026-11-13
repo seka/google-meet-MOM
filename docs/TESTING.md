@@ -6,7 +6,7 @@
 vp install
 vp exec playwright install chromium
 npm run test:browser
-npm run test:integration:extension
+npm run test:integration:extension-chromium
 ```
 
 Playwright管理下のheadless Chromiumを自動起動するため、普段使っているChromeへの拡張の読み込みやMeetへのログインは不要です。マイク、Whisperモデル、Ollamaも不要です。
@@ -37,9 +37,9 @@ npm run build
 
 単体テストではoffscreen作成失敗後の再試行と、ready応答がない場合に20回で打ち切ってstream IDを転送しないことを確認します。
 
-`src/integration-test/` は複数の部品をつないだブラウザ統合テストと利用シナリオを置きます。録音フロー・音声混合はPlaywrightのブラウザテスト、拡張間通信の復旧はビルド済み拡張を使うNode.jsテストです。
+統合テストは実行環境ごとに配置します。`src/integration-test/vitest-browser/` はVitestのブラウザプロジェクトで実行し、`src/integration-test/extension-chromium/` はビルド済み拡張を読み込んだChromiumをNode.jsのテストランナーから実行します。どちらもChromiumを使いますが、前者は通常のWebページ環境、後者は拡張機能のService Worker/offscreenを含む環境です。
 
-`npm run test:integration:extension` はビルド後、Playwrightの通常版Chromiumを `channel: "chromium"` と専用の一時プロファイルで起動して拡張を読み込みます。APIのモックは使いません。待機状態の取得、offscreenとのready応答、拡張ページの再表示、offscreenの終了と再作成、無効なstream IDによる録音開始失敗とエラー状態の復元を確認します。サイドパネル用HTMLは通常の拡張ページとして開くため、Chromeのサイドパネル枠そのものは操作しません。個人のChromeプロファイルは使用しません。
+`npm run test:integration:extension-chromium` はビルド後、Playwrightの通常版Chromiumを `channel: "chromium"` と専用の一時プロファイルで起動して拡張を読み込みます。APIのモックは使いません。待機状態の取得、offscreenとのready応答、拡張ページの再表示、offscreenの終了と再作成、無効なstream IDによる録音開始失敗とエラー状態の復元を確認します。サイドパネル用HTMLは通常の拡張ページとして開くため、Chromeのサイドパネル枠そのものは操作しません。個人のChromeプロファイルは使用しません。
 
 ## この環境だけでは保証しないこと
 
@@ -55,4 +55,4 @@ npm run build
 
 既存のCIはChromiumをインストールして `vp test` を実行するため、追加したブラウザテストも実行されます。失敗時の画像は `src/**/__screenshots__/`、添付情報は `src/.vitest-attachments/` に出力され、CIのartifactから取得できます。生成された画像・添付情報はコミットしません。
 
-CIでは `npm run test:integration:extension` も実行します。拡張間通信テスト失敗時には `test-results/extension/trace.zip` をartifactへ保存します。ローカルで `vp exec playwright show-trace test-results/extension/trace.zip` を実行すると、画面と操作の記録を確認できます。
+CIでは `npm run test:integration:extension-chromium` も実行します。拡張間通信テスト失敗時には `test-results/extension/trace.zip` をartifactへ保存します。ローカルで `vp exec playwright show-trace test-results/extension/trace.zip` を実行すると、画面と操作の記録を確認できます。
