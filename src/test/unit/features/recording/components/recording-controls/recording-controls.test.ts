@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { renderRecordingControls } from "./recording-controls";
+import { renderRecordingControls } from "@features/recording/components/recording-controls/recording-controls";
 
 function createElements() {
   return {

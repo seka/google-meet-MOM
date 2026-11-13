@@ -4,7 +4,7 @@ import {
   loadAndApplyAppearance,
   normalizeAppearance,
   subscribeAppearanceChanges,
-} from "./theme";
+} from "@features/settings/theme";
 
 afterEach(() => {
   delete document.documentElement.dataset.theme;

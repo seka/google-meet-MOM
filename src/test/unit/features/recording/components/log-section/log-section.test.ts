@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { appendChunk, resetLog } from "./log-section";
+import { appendChunk, resetLog } from "@features/recording/components/log-section/log-section";
 
 describe("appendChunk", () => {
   let logContent: HTMLElement;

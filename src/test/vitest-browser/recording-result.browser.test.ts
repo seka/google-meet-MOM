@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vite-plus/test";
-import sidepanelHtml from "../../../../pages/sidepanel/sidepanel.html?raw";
-import { createRecordingResult } from "./recording-result";
+import sidepanelHtml from "../../pages/sidepanel/sidepanel.html?raw";
+import { createRecordingResult } from "@features/recording/components/recording-result/recording-result";
 
 afterEach(() => {
   document.body.replaceChildren();

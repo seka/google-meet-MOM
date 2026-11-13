@@ -37,7 +37,7 @@ function bgHandler(
 }
 
 beforeAll(async () => {
-  await import("./background");
+  await import("../../../workers/background");
 });
 
 beforeEach(() => {

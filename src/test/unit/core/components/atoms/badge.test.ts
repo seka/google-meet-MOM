@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vite-plus/test";
-import { updateBadge } from "./badge";
+import { updateBadge } from "@core/components/atoms/badge";
 
 describe("updateBadge", () => {
   let el: HTMLElement;

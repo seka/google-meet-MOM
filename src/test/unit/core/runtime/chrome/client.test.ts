@@ -3,7 +3,7 @@ import {
   addChromeRuntimeMessageListener,
   sendChromeRuntimeMessage,
   type ChromeRuntimeListener,
-} from "./client";
+} from "@core/runtime/chrome/client";
 
 beforeEach(() => {
   vi.clearAllMocks();

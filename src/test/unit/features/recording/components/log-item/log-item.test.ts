@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createLogChunk } from "./log-item";
+import { createLogChunk } from "@features/recording/components/log-item/log-item";
 
 describe("createLogChunk", () => {
   it("p 要素を返す", () => {

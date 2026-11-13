@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vite-plus/test";
-import { buildSpeakerTranscript, type WordChunk } from "./transcript";
+import { buildSpeakerTranscript, type WordChunk } from "../../../../workers/offscreen/transcript";
 import type { SpeakerEvent } from "@features/recording/types";
 
 const t0 = 1000000; // recordingStartTime (ms)

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { createRecordingResult } from "./recording-result";
+import { createRecordingResult } from "@features/recording/components/recording-result/recording-result";
 
 beforeEach(() => {
   document.body.innerHTML = `

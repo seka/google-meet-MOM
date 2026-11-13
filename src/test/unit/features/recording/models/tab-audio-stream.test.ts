@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { getTabAudioStream } from "./tab-audio-stream";
+import { getTabAudioStream } from "@features/recording/models/tab-audio-stream";
 
 describe("getTabAudioStream", () => {
   it("Chromeのdesktop capture制約でタブ音声を取得する", async () => {

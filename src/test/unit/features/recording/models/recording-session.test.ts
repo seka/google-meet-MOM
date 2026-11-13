@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { RecordingSession, type MediaRecorderFactory } from "./recording-session";
+import {
+  RecordingSession,
+  type MediaRecorderFactory,
+} from "@features/recording/models/recording-session";
 
 interface FakeMediaRecorder {
   ondataavailable: ((event: BlobEvent) => void) | null;

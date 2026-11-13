@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { subscribeOffscreenRecordingCommands } from "./recording";
+import { subscribeOffscreenRecordingCommands } from "@data/recording";
 
 describe("subscribeOffscreenRecordingCommands", () => {
   it("offscreenの準備確認へ応答する", () => {
