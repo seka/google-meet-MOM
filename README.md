@@ -47,6 +47,7 @@ npx vp check         # Lint・型チェック
 npx vp check --fix   # フォーマット自動修正
 npm test             # ユニットテストとブラウザテスト
 npm run test:browser # Chromiumでブラウザテストのみ実行
+npm run test:integration:extension-chromium # ビルドした拡張をChromiumへ読み込み、拡張間通信の復旧シナリオを確認
 ```
 
 ブラウザテストを初めて実行する前に、Playwright 管理下の Chromium をインストールしてください。
@@ -56,6 +57,8 @@ vp exec playwright install chromium
 ```
 
 ブラウザテストは headless Chromium で実行され、失敗時のブラウザ例外と `console` 出力は Vitest の結果に表示されます。
+
+録音操作の自動テストは拡張の手動インストール、Meetへのログイン、マイク、Ollamaの起動を必要としません。検証範囲と実行方法は [テスト環境](docs/TESTING.md) を参照してください。
 
 ビルド後、`chrome://extensions` で拡張機能の更新ボタン（🔄）をクリックして反映します。
 設定画面の「この拡張機能について」では、バージョンとビルド元のGitコミットIDを確認できます。

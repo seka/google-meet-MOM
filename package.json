@@ -7,6 +7,7 @@
     "build": "vp build",
     "test": "vp test",
     "test:browser": "vp test run --project=browser",
+    "test:integration:extension-chromium": "vp build && node --test src/integration-test/extension-chromium/recording-recovery.test.mjs",
     "prepare": "vp config"
   },
   "dependencies": {
