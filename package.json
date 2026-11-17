@@ -11,6 +11,7 @@
     "test:unit": "vp test run --project=unit",
     "test:browser": "vp test run --project=browser",
     "test:integration:extension-chromium": "vp build && node --test src/integration-test/extension-chromium/recording-recovery.test.mjs",
+    "test:integration:whisper-accuracy": "node src/integration-test/whisper/whisper-accuracy.mjs",
     "prepare": "vp config --no-agent"
   },
   "dependencies": {
