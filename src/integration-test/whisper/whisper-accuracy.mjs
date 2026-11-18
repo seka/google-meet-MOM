@@ -6,6 +6,9 @@ import { env } from "@huggingface/transformers";
 import { WhisperClient } from "../../core/api/whisper/client.ts";
 import { calculateCharacterErrorRate } from "../../core/api/whisper/character-error-rate.ts";
 
+// 目的: 固定した FLEURS 音声と正解文を使い、本番と同じ WhisperClient の認識結果を評価する。
+// 手段: WAV を Float32Array に変換して推論し、各サンプルの CER と全体の micro CER を出力する。
+// 判定: このランナーは計測専用で、合格閾値を設けない。精度の改善サイクルは別途定める。
 const DATA_DIR = process.env.FLEURS_EVAL_DATA_DIR;
 const MODEL = process.env.FLEURS_EVAL_MODEL ?? "onnx-community/whisper-tiny";
 const LIMIT = Number.parseInt(process.env.FLEURS_EVAL_LIMIT ?? "25", 10);
@@ -37,6 +40,8 @@ const results = [];
 
 process.stdout.write(`Loading ${MODEL}; evaluating ${samples.length} FLEURS samples...\n`);
 
+// 各サンプルを同じ言語・本番 q8 設定で逐次推論し、編集数と正解文字数を合算する。
+// micro CER はサンプルごとの CER の平均ではなく、全編集数 / 全正解文字数で算出する。
 for (const sample of samples) {
   const audioSamples = decodeFleursWav(await readFile(sample.audioPath), sample.id);
   const transcription = await whisperClient.transcribe(audioSamples, {
@@ -97,6 +102,8 @@ async function loadEvaluationSamples(metadataPath, audioDirectory, limit) {
   const dataRows = hasHeader ? rows.slice(1) : rows;
   const filesByName = await findFilesByName(audioDirectory);
 
+  // 先頭 limit 件だけを評価し、TSV 内の音声ファイル名で実ファイルを照合する。
+  // id はログ用メタデータとして保持し、音声パスを読み込み対象の根拠にする。
   return dataRows.slice(0, limit).map((row, index) => {
     const id = row[columns.id] ?? String(index);
     const relativeAudioPath = row[columns.path];
@@ -136,6 +143,8 @@ async function findFilesByName(directory) {
 }
 
 function decodeFleursWav(buffer, sampleId) {
+  // 推論前に RIFF/WAVE と FLEURS の 16 kHz mono 条件を検証する。
+  // この評価で扱う PCM16 と IEEE Float32 だけを復号し、未対応形式は明示的に失敗させる。
   assert.equal(buffer.toString("ascii", 0, 4), "RIFF", `FLEURS ${sampleId}: not a RIFF file`);
   assert.equal(buffer.toString("ascii", 8, 12), "WAVE", `FLEURS ${sampleId}: not a WAVE file`);
 
