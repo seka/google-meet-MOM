@@ -24,6 +24,9 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
+        # Browser/extension tests use WASM and do not need the optional Linux CUDA EP.
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
         run: npm ci
 
       - name: Install Chromium
