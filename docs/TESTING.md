@@ -3,8 +3,8 @@
 ## 実行
 
 ```bash
-vp install
-vp exec playwright install chromium
+npm ci
+npx playwright install chromium
 npm run test:browser
 npm run test:integration:extension-chromium
 ```
@@ -12,8 +12,8 @@ npm run test:integration:extension-chromium
 Playwright管理下のheadless Chromiumを自動起動するため、普段使っているChromeへの拡張の読み込みやMeetへのログインは不要です。マイク、Whisperモデル、Ollamaも不要です。
 
 ```bash
-npx vp test run --project=unit
-npx vp check
+npm run test:unit
+npm run check
 npm run build
 ```
 
@@ -53,6 +53,6 @@ npm run build
 
 ## CIと失敗時の調査
 
-既存のCIはChromiumをインストールして `vp test` を実行するため、追加したブラウザテストも実行されます。失敗時の画像は `src/**/__screenshots__/`、添付情報は `src/.vitest-attachments/` に出力され、CIのartifactから取得できます。生成された画像・添付情報はコミットしません。
+既存のCIはChromiumをインストールして `npm test` を実行するため、追加したブラウザテストも実行されます。失敗時の画像は `src/**/__screenshots__/`、添付情報は `src/.vitest-attachments/` に出力され、CIのartifactから取得できます。生成された画像・添付情報はコミットしません。
 
-CIでは `npm run test:integration:extension-chromium` も実行します。拡張間通信テスト失敗時には `test-results/extension/trace.zip` をartifactへ保存します。ローカルで `vp exec playwright show-trace test-results/extension/trace.zip` を実行すると、画面と操作の記録を確認できます。
+CIでは `npm run test:integration:extension-chromium` も実行します。拡張間通信テスト失敗時には `test-results/extension/trace.zip` をartifactへ保存します。ローカルで `npx playwright show-trace test-results/extension/trace.zip` を実行すると、画面と操作の記録を確認できます。

@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "vp build --watch",
     "build": "vp build",
+    "check": "vp check",
+    "check:fix": "vp check --fix",
     "test": "vp test",
+    "test:unit": "vp test run --project=unit",
     "test:browser": "vp test run --project=browser",
     "test:integration:extension-chromium": "vp build && node --test src/integration-test/extension-chromium/recording-recovery.test.mjs",
-    "prepare": "vp config"
+    "prepare": "vp config --no-agent"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0"
