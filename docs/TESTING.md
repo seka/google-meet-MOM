@@ -3,7 +3,7 @@
 ## 実行
 
 ```bash
-npm ci
+npm install
 npx playwright install chromium
 npm run test:browser
 npm run test:integration:extension-chromium
@@ -16,6 +16,8 @@ npm run test:unit
 npm run check
 npm run build
 ```
+
+ローカルのセットアップには `npm install` を使い、CI では lockfile に固定するため `npm ci` を使います。
 
 ## 自動検証する範囲
 

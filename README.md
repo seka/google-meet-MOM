@@ -22,12 +22,14 @@ Google Meet の音声をローカルで録音し、Whisper で文字起こし・
 ### Setup
 
 ```bash
-# lockfileどおりにプロジェクト依存をインストール
-npm ci
+# プロジェクト依存をインストール
+npm install
 
 # ビルド
 npm run build
 ```
+
+CI では lockfile に固定された依存関係を使うため `npm ci` を実行します。
 
 Chrome で `chrome://extensions` を開き、「パッケージ化されていない拡張機能を読み込む」から `dist/` フォルダを選択してください。
 
