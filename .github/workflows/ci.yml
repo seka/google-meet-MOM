@@ -16,23 +16,27 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Set up Vite+
-        uses: voidzero-dev/setup-vp@v1
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
-          cache: true
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: vp install
+        # Browser/extension tests use WASM and do not need the optional Linux CUDA EP.
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+        run: npm ci
 
       - name: Install Chromium
-        run: vp exec playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Check lint and formatting
-        run: vp check
+        run: npm run check
 
       - name: Run tests
-        run: vp test
+        run: npm test
 
       - name: Test extension integration in Chromium
         run: npm run test:integration:extension-chromium
@@ -50,4 +54,4 @@ jobs:
           if-no-files-found: ignore
 
       - name: Build
-        run: vp build
+        run: npm run build

@@ -23,7 +23,7 @@ export default defineConfig({
     __BUILD_ID__: JSON.stringify(getBuildId()),
   },
   staged: {
-    "*": "vp check --fix",
+    "*": "npm run check:fix --",
   },
   fmt: {
     ignorePatterns: [".git_worktrees/**", "public/vendor/**", "public/models/**"],

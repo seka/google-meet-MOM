@@ -8,7 +8,7 @@ Google Meet の音声をローカルで録音・文字起こし・議事録化�
 | 役割           | 技術                                                       |
 | -------------- | ---------------------------------------------------------- |
 | 言語           | TypeScript                                                 |
-| ビルド         | Vite+（`vp` コマンド）                                     |
+| ビルド         | Vite+（プロジェクトローカルCLIをnpm scripts経由で実行）    |
 | 文字起こし     | `@huggingface/transformers` v3（Whisper WASM）             |
 | 議事録生成     | Ollama REST API（`localhost:11434`）                       |
 | 音声キャプチャ | `chrome.tabCapture` + `getUserMedia` + Web Audio API       |
@@ -19,8 +19,8 @@ Google Meet の音声をローカルで録音・文字起こし・議事録化�
 ```bash
 npm run dev      # ファイル監視 + 自動ビルド（開発時）
 npm run build    # プロダクションビルド → dist/
-npx vp check     # フォーマット・Lint・型チェック
-npx vp check --fix  # 自動修正
+npm run check       # フォーマット・Lint・型チェック
+npm run check:fix   # 自動修正
 ```
 
 ## エントリーポイント
@@ -35,7 +35,7 @@ npx vp check --fix  # 自動修正
 
 ## 開発上の注意
 
-- `vp check` は型チェックを含む。コード変更後は必ず通すこと
+- `npm run check` は型チェックを含む。コード変更後は必ず通すこと
 - `minify: false` は Chrome Web Store ポリシー対応のため変更しない
 - Whisper WASM は SharedArrayBuffer 無効環境向けに `numThreads = 1` で固定している
 - 話者分離は Google Meet DOM の MutationObserver に依存（DOM 変更で動作しなくなる可能性あり）

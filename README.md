@@ -22,12 +22,14 @@ Google Meet の音声をローカルで録音し、Whisper で文字起こし・
 ### Setup
 
 ```bash
-# 依存関係のインストール
+# プロジェクト依存をインストール
 npm install
 
 # ビルド
 npm run build
 ```
+
+CI では lockfile に固定された依存関係を使うため `npm ci` を実行します。
 
 Chrome で `chrome://extensions` を開き、「パッケージ化されていない拡張機能を読み込む」から `dist/` フォルダを選択してください。
 
@@ -43,8 +45,8 @@ Chrome で `chrome://extensions` を開き、「パッケージ化されてい�
 
 ```bash
 npm run dev          # ファイル変更を監視して自動ビルド
-npx vp check         # Lint・型チェック
-npx vp check --fix   # フォーマット自動修正
+npm run check        # フォーマット・Lint・型チェック
+npm run check:fix    # 自動修正
 npm test             # ユニットテストとブラウザテスト
 npm run test:browser # Chromiumでブラウザテストのみ実行
 npm run test:integration:extension-chromium # ビルドした拡張をChromiumへ読み込み、拡張間通信の復旧シナリオを確認
@@ -53,7 +55,7 @@ npm run test:integration:extension-chromium # ビルドした拡張をChromium�
 ブラウザテストを初めて実行する前に、Playwright 管理下の Chromium をインストールしてください。
 
 ```bash
-vp exec playwright install chromium
+npx playwright install chromium
 ```
 
 ブラウザテストは headless Chromium で実行され、失敗時のブラウザ例外と `console` 出力は Vitest の結果に表示されます。
