@@ -24,7 +24,8 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        # Browser/extension tests use WASM and do not need the optional Linux CUDA EP.
+        # npm ci runs the onnxruntime-node install script, which reads this variable.
+        # Browser/extension tests use WASM, so skip downloading the optional CUDA binaries.
         env:
           ONNXRUNTIME_NODE_INSTALL_CUDA: skip
         run: npm ci
