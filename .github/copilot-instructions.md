@@ -5,7 +5,7 @@ Chrome Extension (MV3) that records Google Meet audio locally, transcribes with 
 ## Tech Stack
 
 - **Language**: TypeScript
-- **Build**: Vite+ (`vp` command)
+- **Build**: Vite+ pinned in project dependencies and invoked via npm scripts
 - **Transcription**: `@huggingface/transformers` v3 — Whisper WASM, single-threaded (`numThreads = 1`)
 - **Minutes generation**: Ollama REST API at `localhost:11434`
 - **Audio capture**: `chrome.tabCapture` + `getUserMedia` + Web Audio API (mixed in Offscreen Document)
@@ -16,8 +16,8 @@ Chrome Extension (MV3) that records Google Meet audio locally, transcribes with 
 ```bash
 npm run dev          # watch + auto-build
 npm run build        # production build → dist/
-npx vp check         # format + lint + type check
-npx vp check --fix   # auto-fix formatting
+npm run check        # format + lint + type check
+npm run check:fix    # auto-fix formatting
 ```
 
 ## Architecture
