@@ -18,12 +18,12 @@ jobs:
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1
+        env:
+          # Chromium のテストでは CUDA を使わないため、セットアップ中の自動取得を省く。
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
         with:
           node-version: "24"
           cache: true
-
-      - name: Install dependencies
-        run: vp install
 
       - name: Install Chromium
         run: vp exec playwright install --with-deps chromium
