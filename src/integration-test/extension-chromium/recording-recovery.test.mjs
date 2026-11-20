@@ -29,6 +29,36 @@ await test(
       let panel = await context.newPage();
       await panel.goto(panelUrl);
       await panel.locator("#status-label").filter({ hasText: "待機中" }).waitFor();
+      // 前提: 拡張ページでビルド済みのWorkletに一定音量の合成雑音を入力する。
+      // チェック内容: 本番と同じCSP下でWASMを読み込み、48 kHzの雑音を処理する。
+      // 期待値: 出力は無音にならず、定常区間のエネルギーが下がる。
+      const noiseEnergyRatio = await panel.evaluate(async () => {
+        const sampleRate = 48000;
+        const audioContext = new OfflineAudioContext(1, sampleRate, sampleRate);
+        await audioContext.audioWorklet.addModule(chrome.runtime.getURL("rnnoise-worklet.js"));
+        const denoiser = new AudioWorkletNode(audioContext, "rnnoise", {
+          outputChannelCount: [1],
+        });
+        const source = audioContext.createBufferSource();
+        const buffer = audioContext.createBuffer(1, sampleRate, sampleRate);
+        const input = buffer.getChannelData(0);
+        let seed = 1234;
+        for (let i = 0; i < input.length; i++) {
+          seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+          input[i] = (seed / 2 ** 32 - 0.5) * 0.1;
+        }
+        source.buffer = buffer;
+        source.connect(denoiser).connect(audioContext.destination);
+        source.start();
+        const rendered = await audioContext.startRendering();
+        const energy = (samples) =>
+          samples.subarray(sampleRate / 2).reduce((sum, sample) => sum + sample ** 2, 0);
+        return energy(rendered.getChannelData(0)) / energy(input);
+      });
+      assert.ok(
+        noiseEnergyRatio > 0 && noiseEnergyRatio < 0.5,
+        `energy ratio: ${noiseEnergyRatio}`,
+      );
       assert.deepEqual(
         await panel.evaluate(() => chrome.runtime.sendMessage({ type: "GET_STATE" })),
         { state: "idle", recordingId: null },

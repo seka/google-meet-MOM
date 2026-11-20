@@ -5,7 +5,7 @@ Google Meet の音声をローカルで録音し、Whisper で文字起こし・
 
 ## Overview
 
-- **録音**: タブ音声 + マイクをミックスして録音
+- **録音**: Meet のタブ音声を RNNoise v0.2 で処理し、マイク音声と混ぜてローカルに保存
 - **文字起こし**: Whisper WASM（`@huggingface/transformers`）でローカル実行
 - **話者分離**: Google Meet の DOM を監視し、発言者を自動タグ付け
 - **議事録生成**: Ollama のローカル LLM で Markdown 形式の議事録を生成
@@ -74,7 +74,7 @@ npx playwright install chromium
 | ---------------- | ------------------------ | -------------------------------------------- |
 | Ollama URL       | `http://localhost:11434` | Ollama のエンドポイント                      |
 | Ollama モデル    | `llama3.2`               | 議事録生成に使用するモデル                   |
-| Whisper モデル   | `whisper-tiny`           | 文字起こしモデル（初回ダウンロード約 150MB） |
+| Whisper モデル   | `whisper-base`           | 文字起こしモデル（初回利用時にダウンロード） |
 | 発言ログ更新間隔 | 15 秒                    | 録音中のプレビュー更新頻度                   |
 | 議事録の出力先   | ブラウザ内に保存         | Markdown ファイルとして自動保存可能          |
 | 録音の出力先     | ブラウザ内に保存         | WebM 音声ファイルとして自動保存可能          |

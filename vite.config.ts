@@ -71,6 +71,7 @@ export default defineConfig({
         background: resolve(__dirname, "src/workers/background.ts"),
         "meeting-observer": resolve(__dirname, "src/page-scripts/meeting-observer.ts"),
         offscreen: resolve(__dirname, "src/workers/offscreen/offscreen.html"),
+        "rnnoise-worklet": resolve(__dirname, "src/workers/offscreen/rnnoise-worklet.ts"),
         sidepanel: resolve(__dirname, "src/pages/sidepanel/sidepanel.html"),
         options: resolve(__dirname, "src/pages/options/options.html"),
       },

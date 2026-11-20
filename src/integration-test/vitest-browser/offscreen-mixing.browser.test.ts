@@ -58,12 +58,14 @@ afterAll(async () => {
   vi.restoreAllMocks();
   oscillators.forEach((oscillator) => oscillator.stop());
   streams.forEach((stream) => stream.getTracks().forEach((track) => track.stop()));
-  await Promise.all(contexts.map((context) => context.close()));
+  await Promise.all(
+    contexts.filter((context) => context.state !== "closed").map((context) => context.close()),
+  );
   vi.unstubAllGlobals();
 });
 
-it("本番offscreen処理がタブ音声440Hzとマイク音声880Hzを両方保存する", async () => {
-  // 前提: タブとマイクのgetUserMediaを別々の合成音声に置換し、Whisper推論だけ固定応答にする。
+it("RNNoise が読み込めなくてもタブ音声とマイク音声を両方保存する", async () => {
+  // 前提: タブとマイクは別々の合成音声を返し、Workletの読み込みは失敗させる。
   // チェック内容: 本番offscreen処理で録音・保存し、保存Blobを復号して周波数成分を調べる。
   // 期待値: 440Hzと880Hzは各0.05超、入力していない1760Hzは0.03未満となる。
   // 実デバイスの権限やtabCaptureによる音声取得は、このテストでは確認しない。
@@ -76,6 +78,9 @@ it("本番offscreen処理がタブ音声440Hzとマイク音声880Hzを両方保
       }
     },
   );
+  const addModule = vi
+    .spyOn(AudioWorklet.prototype, "addModule")
+    .mockRejectedValue(new Error("Worklet unavailable"));
   vi.stubGlobal("chrome", {
     runtime: {
       getURL: (path: string) => new URL(path, location.href).href,
@@ -107,11 +112,15 @@ it("本番offscreen処理がタブ音声440Hzとマイク音声880Hzを両方保
       },
     }),
   ).toEqual({ ok: true });
+  expect(addModule).toHaveBeenCalledWith(expect.stringContaining("rnnoise-worklet.js"));
   expect(getUserMedia).toHaveBeenNthCalledWith(1, {
     audio: { mandatory: { chromeMediaSource: "tab", chromeMediaSourceId: "test-stream" } },
     video: false,
   });
-  expect(getUserMedia).toHaveBeenNthCalledWith(2, { audio: true, video: false });
+  expect(getUserMedia).toHaveBeenNthCalledWith(2, {
+    audio: { noiseSuppression: true, echoCancellation: true },
+    video: false,
+  });
   await new Promise<void>((resolve) => setTimeout(resolve, 500));
   expect(
     await send({

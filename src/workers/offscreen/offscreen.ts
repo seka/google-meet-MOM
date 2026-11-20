@@ -12,6 +12,7 @@ import type { ExtensionSettings } from "@features/settings/types";
 import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { RecordingSession } from "@features/recording/models/recording-session";
+import { microphoneAudioConstraints } from "@features/recording/models/microphone-audio";
 import { getTabAudioStream } from "@features/recording/models/tab-audio-stream";
 import { WhisperClient } from "@core/api/whisper/client";
 
@@ -25,6 +26,7 @@ const asr = new Asr(
 
 const recordingSession = new RecordingSession();
 let currentMeetingTitle = "Google Meet";
+let releaseRecordingAudio: (() => Promise<void>) | null = null;
 
 // チャンク処理の状態
 let processedChunkCount = 0;
@@ -86,21 +88,66 @@ async function startRecording(
   isProcessingChunk = false;
 
   const tabStream = await getTabAudioStream(streamId);
+  let micStream: MediaStream | undefined;
+  let audioContext: AudioContext | undefined;
+  const releaseAudio = async () => {
+    tabStream.getTracks().forEach((track) => track.stop());
+    micStream?.getTracks().forEach((track) => track.stop());
+    await audioContext?.close();
+  };
 
-  const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: microphoneAudioConstraints,
+      video: false,
+    });
 
-  const audioCtx = new AudioContext();
-  const destination = audioCtx.createMediaStreamDestination();
-  const tabSource = audioCtx.createMediaStreamSource(tabStream);
-  tabSource.connect(destination);
-  tabSource.connect(audioCtx.destination);
-  audioCtx.createMediaStreamSource(micStream).connect(destination);
+    // RNNoise は48 kHzの入力を使うため、Web Audioに取り込み時の変換を任せる。
+    audioContext = new AudioContext({ sampleRate: 48000 });
+    const destination = audioContext.createMediaStreamDestination();
+    const tabSource = audioContext.createMediaStreamSource(tabStream);
+    tabSource.connect(audioContext.destination);
+    await connectTabRecordingAudio(audioContext, tabSource, destination);
+    audioContext.createMediaStreamSource(micStream).connect(destination);
 
-  recordingSession.start(destination.stream);
+    recordingSession.start(destination.stream);
+    releaseRecordingAudio = releaseAudio;
+  } catch (error) {
+    await releaseAudio();
+    throw error;
+  }
 
   chunkIntervalId = setInterval(() => {
     processNextChunk().catch(reportOffscreenError);
   }, settings.chunkIntervalSec * 1000);
+}
+
+async function connectTabRecordingAudio(
+  audioContext: AudioContext,
+  tabSource: MediaStreamAudioSourceNode,
+  destination: MediaStreamAudioDestinationNode,
+): Promise<void> {
+  // Worklet の読み込み失敗や処理エラー時もタブの音声を録音に残す。
+  try {
+    await audioContext.audioWorklet.addModule(chrome.runtime.getURL("rnnoise-worklet.js"));
+    const denoiser = new AudioWorkletNode(audioContext, "rnnoise", {
+      channelCount: 1,
+      channelCountMode: "explicit",
+      outputChannelCount: [1],
+    });
+    denoiser.addEventListener(
+      "processorerror",
+      () => {
+        tabSource.disconnect(denoiser);
+        denoiser.disconnect(destination);
+        tabSource.connect(destination);
+      },
+      { once: true },
+    );
+    tabSource.connect(denoiser).connect(destination);
+  } catch {
+    tabSource.connect(destination);
+  }
 }
 
 async function stopAndTranscribe(
@@ -118,7 +165,9 @@ async function stopAndTranscribe(
   }
 
   const recordingActualStart = recordingStartTime;
-  const audioBlob = await recordingSession.stop();
+  const releaseAudio = releaseRecordingAudio;
+  releaseRecordingAudio = null;
+  const audioBlob = await recordingSession.stop().finally(() => releaseAudio?.());
   if (!audioBlob) return;
   const duration = (Date.now() - recordingActualStart) / 1000;
   const savedAt = new Date().toISOString();
