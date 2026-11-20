@@ -93,7 +93,10 @@ async function startRecording(
   const releaseAudio = async () => {
     tabStream.getTracks().forEach((track) => track.stop());
     micStream?.getTracks().forEach((track) => track.stop());
-    await audioContext?.close();
+    // トラック停止後の close 失敗で、取得済みの録音や元の開始エラーを失わないようにする。
+    await audioContext?.close().catch((error: unknown) => {
+      console.warn("録音用 AudioContext を閉じられませんでした", error);
+    });
   };
 
   try {
@@ -167,6 +170,7 @@ async function stopAndTranscribe(
   const recordingActualStart = recordingStartTime;
   const releaseAudio = releaseRecordingAudio;
   releaseRecordingAudio = null;
+  // MediaRecorder が末尾のデータを受け取ってから、保存と文字起こしの前に音声入力を解放する。
   const audioBlob = await recordingSession.stop().finally(() => releaseAudio?.());
   if (!audioBlob) return;
   const duration = (Date.now() - recordingActualStart) / 1000;
