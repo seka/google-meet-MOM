@@ -1,3 +1,4 @@
+import { microphoneAudioConstraints } from "@features/recording/models/microphone-audio";
 import { DEFAULT_SETTINGS } from "../../types";
 import { testWhisperConnection } from "@data/connection-test";
 import { subscribeTranscriptionEvents } from "@data/transcription";
@@ -46,7 +47,7 @@ export function initializeConnectionTest(): void {
   }
 
   async function startRecordingTest(): Promise<void> {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: microphoneAudioConstraints });
     const audioCtx = new AudioContext();
     const source = audioCtx.createMediaStreamSource(stream);
     const processor = audioCtx.createScriptProcessor(4096, 1, 1);

@@ -12,7 +12,7 @@ export interface ExtensionSettings {
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "llama3.2",
-  whisperModel: "onnx-community/whisper-tiny",
+  whisperModel: "onnx-community/whisper-base",
   language: "ja",
   chunkIntervalSec: 15,
   appearance: "system",

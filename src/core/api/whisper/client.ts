@@ -51,6 +51,10 @@ export class WhisperClient implements TranscriberClient {
   }
 
   async transcribe(audioData: Float32Array, options: TranscribeOptions): Promise<Transcription> {
+    if (!hasAudibleAudio(audioData)) {
+      return { text: "", chunks: [] };
+    }
+
     const asr = await this.loadWhisper(options.model, options.onProgress);
     const result = await asr(audioData, {
       language: toWhisperLanguage(options.language),
@@ -70,4 +74,22 @@ export class WhisperClient implements TranscriberClient {
 
 function toWhisperLanguage(language: string): string {
   return language === "ja" ? "japanese" : "english";
+}
+
+function hasAudibleAudio(audioData: Float32Array): boolean {
+  // 無音に近い入力での誤生成を防ぐ。短い発話を長い無音で平均化しないよう、16 kHz の音声を20 msずつ測る。
+  const frameSize = 320;
+  const minimumRms = 0.001; // フルスケールに対して -60 dB
+  for (let start = 0; start < audioData.length; start += frameSize) {
+    const end = Math.min(start + frameSize, audioData.length);
+    let sumSquares = 0;
+    for (let index = start; index < end; index++) {
+      const sample = audioData[index]!;
+      sumSquares += sample * sample;
+    }
+    if (sumSquares >= (end - start) * minimumRms ** 2) {
+      return true;
+    }
+  }
+  return false;
 }
