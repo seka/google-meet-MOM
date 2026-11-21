@@ -15,7 +15,8 @@
     "prepare": "vp config --no-agent"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.0.0"
+    "@huggingface/transformers": "^3.0.0",
+    "@jitsi/rnnoise-wasm": "0.2.1"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
