@@ -3,11 +3,13 @@ import type { ChromeRuntimeListener } from "@core/runtime/chrome/client";
 import { DEFAULT_SETTINGS } from "@features/settings/types";
 import { getRecording } from "../../db";
 
+const transcribe = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ text: "混合音声のテスト", chunks: [] }),
+);
+
 vi.mock("@core/api/whisper/client", () => ({
   WhisperClient: class {
-    async transcribe() {
-      return { text: "混合音声のテスト", chunks: [] };
-    }
+    transcribe = transcribe;
   },
 }));
 
@@ -165,8 +167,8 @@ it("RNNoise が読み込めなくてもタブ音声とマイク音声を両方�
 
 it("マイクの取得に失敗したら先に取得したタブのトラックを停止する", async () => {
   // 前提: タブは取得済みで、マイク取得は拒否される。
-  // チェック内容: 本番の開始要求への応答とタブの状態を確認する。
-  // 期待値: 元のエラーを返し、タブのトラックは終了する。
+  // チェック内容: 本番の開始要求への応答と、取得済みの録音リソースの状態を確認する。
+  // 期待値: 元のエラーを返し、タブのトラックと録音用Contextは閉じる。
   const tab = createTone(440);
   vi.spyOn(navigator.mediaDevices, "getUserMedia")
     .mockResolvedValueOnce(tab)
@@ -174,6 +176,7 @@ it("マイクの取得に失敗したら先に取得したタブのトラック�
 
   expect(await startRecording(Date.now())).toEqual({ ok: false, error: "Microphone denied" });
   expect(tab.getAudioTracks()[0]?.readyState).toBe("ended");
+  expect(contexts[1]?.state).toBe("closed");
 });
 
 it("録音用 AudioContext の close が失敗しても録音を保存する", async () => {
@@ -200,4 +203,19 @@ it("録音用 AudioContext の close が失敗しても録音を保存する", a
   expect(saved?.payload?.recordingId).toBeTruthy();
   const recording = await getRecording(saved!.payload!.recordingId!);
   expect(recording?.audioBlob.size).toBeGreaterThan(0);
+});
+
+it("Whisper の接続テストで認識結果が空なら再録音を案内する", async () => {
+  // 前提: 無音の録音に対してWhisperクライアントが空の文字起こしを返す。
+  // チェック内容: offscreenの接続テスト要求に対する応答を確認する。
+  // 期待値: 成功扱いにせず、再録音を案内する。
+  transcribe.mockResolvedValueOnce({ text: "", chunks: [] });
+
+  expect(
+    await send({
+      type: "WHISPER_TEST",
+      target: "offscreen",
+      payload: { audioSamples: [0, 0], model: DEFAULT_SETTINGS.whisperModel, language: "ja" },
+    }),
+  ).toEqual({ ok: false, error: expect.stringContaining("もう一度録音してください") });
 });

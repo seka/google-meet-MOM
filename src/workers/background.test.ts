@@ -375,3 +375,34 @@ describe("OLLAMA_TEST", () => {
     );
   });
 });
+
+it("文字起こしが空なら保存済みの録音を案内し、議事録を生成しない", async () => {
+  // 前提: 録音は保存済みで、offscreenは空白だけの文字起こしを返す。
+  // チェック内容: 完了イベントから状態通知とOllamaへの通信を確認する。
+  // 期待値: 録音ID付きで音声を認識できなかったことを通知し、Ollamaには通信しない。
+  const recordingId = "silent-recording";
+  bgHandler(
+    {
+      type: "TRANSCRIPTION_DONE",
+      target: "background",
+      payload: { transcript: "  ", recordingId },
+    },
+    {},
+    vi.fn(),
+  );
+
+  await vi.waitFor(() =>
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "STATE_CHANGED",
+        payload: {
+          state: "error",
+          recordingId,
+          message: expect.stringContaining("音声を認識できなかった"),
+        },
+      }),
+      expect.any(Function),
+    ),
+  );
+  expect(fetch).not.toHaveBeenCalled();
+});
