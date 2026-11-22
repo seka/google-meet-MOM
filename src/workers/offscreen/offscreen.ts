@@ -12,7 +12,6 @@ import type { ExtensionSettings } from "@features/settings/types";
 import { Asr } from "../../data/asr";
 import { buildSpeakerTranscript } from "./transcript";
 import { RecordingSession } from "@features/recording/models/recording-session";
-import { microphoneAudioConstraints } from "@features/recording/models/microphone-audio";
 import { getTabAudioStream } from "@features/recording/models/tab-audio-stream";
 import { WhisperClient } from "@core/api/whisper/client";
 
@@ -87,26 +86,27 @@ async function startRecording(
   processedChunkCount = 0;
   isProcessingChunk = false;
 
-  const tabStream = await getTabAudioStream(streamId);
-  let micStream: MediaStream | undefined;
-  let audioContext: AudioContext | undefined;
+  // RNNoise は48 kHzの入力を使うため、Web Audioに取り込み時の変換を任せる。
+  const audioContext = new AudioContext({ sampleRate: 48000 });
+  const inputTracks: MediaStreamTrack[] = [];
   const releaseAudio = async () => {
-    tabStream.getTracks().forEach((track) => track.stop());
-    micStream?.getTracks().forEach((track) => track.stop());
+    inputTracks.forEach((track) => track.stop());
     // トラック停止後の close 失敗で、取得済みの録音や元の開始エラーを失わないようにする。
-    await audioContext?.close().catch((error: unknown) => {
+    await audioContext.close().catch((error: unknown) => {
       console.warn("録音用 AudioContext を閉じられませんでした", error);
     });
   };
 
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({
-      audio: microphoneAudioConstraints,
+    // 次の取得に失敗しても解放できるよう、取得したトラックはその場で登録する。
+    const tabStream = await getTabAudioStream(streamId);
+    inputTracks.push(...tabStream.getTracks());
+    const micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { noiseSuppression: true, echoCancellation: true },
       video: false,
     });
+    inputTracks.push(...micStream.getTracks());
 
-    // RNNoise は48 kHzの入力を使うため、Web Audioに取り込み時の変換を任せる。
-    audioContext = new AudioContext({ sampleRate: 48000 });
     const destination = audioContext.createMediaStreamDestination();
     const tabSource = audioContext.createMediaStreamSource(tabStream);
     tabSource.connect(audioContext.destination);
@@ -240,7 +240,17 @@ subscribeOffscreenConnectionTests(({ audioSamples, model, language }, respond) =
   const audioData = new Float32Array(audioSamples);
   asr
     .transcribeSamples(audioData, { model, language, onProgress: sendWhisperProgress })
-    .then((transcript) => respond({ ok: true, transcript }))
+    .then((transcript) => {
+      // 無音ではモデルの読み込み自体を省くため、認識結果が空なら再録音を案内する。
+      if (!transcript.trim()) {
+        respond({
+          ok: false,
+          error: "音声を認識できませんでした。マイクに向かって話し、もう一度録音してください。",
+        });
+        return;
+      }
+      respond({ ok: true, transcript });
+    })
     .catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       respond({ ok: false, error: message });

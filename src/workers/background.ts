@@ -178,6 +178,15 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 async function generateAndSaveMinutes(transcript: string, recordingId: string): Promise<void> {
+  // 保存済みの録音は参照できるようにし、発言の根拠が空なら Ollama への依頼を省く。
+  if (!transcript.trim()) {
+    await setState("error", {
+      recordingId,
+      message: "音声を認識できなかったため、議事録は作成されませんでした。録音は保存済みです。",
+    });
+    return;
+  }
+
   await setState("summarizing", { recordingId });
   if (!currentSettings) throw new Error("録音設定を取得できませんでした");
   try {
