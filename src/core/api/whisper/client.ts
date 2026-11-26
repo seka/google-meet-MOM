@@ -56,11 +56,18 @@ export class WhisperClient implements TranscriberClient {
     }
 
     const asr = await this.loadWhisper(options.model, options.onProgress);
+    // 日本語会議の最終文字起こしで同じ語句が連続生成されるケースを抑えるため、
+    // 評価で効果を確認した small では同じ6トークンの並びの再生成を制限する。
+    const suppressRepetition =
+      options.model === "onnx-community/whisper-small" &&
+      options.language === "ja" &&
+      options.returnTimestamps;
     const result = await asr(audioData, {
       language: toWhisperLanguage(options.language),
       task: "transcribe",
       chunk_length_s: 30,
       stride_length_s: 5,
+      ...(suppressRepetition ? { no_repeat_ngram_size: 6 } : {}),
       ...(options.returnTimestamps ? { return_timestamps: true } : {}),
     });
     const singleResult = Array.isArray(result) ? result[0] : result;
