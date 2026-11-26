@@ -30,6 +30,19 @@ npm run test:integration:whisper-accuracy
 
 初回はモデルを Hugging Face から取得するため、ネットワーク接続とモデル保存容量が必要です。出力には評価リビジョン・CC BY 4.0 の出典表記・モデル名・各サンプルの正解/認識結果・CER が含まれます。
 
+## 日本語のテスト会議を評価する
+
+会議の録音と、発話順に書いた UTF-8 の正解文字起こしを用意します。正解文には話者名や時刻のラベルを入れず、話された内容を記載します。録音と正解文はローカルに置きます。
+
+```sh
+ffmpeg -i meeting.webm -vn -ac 1 -ar 16000 -f f32le /tmp/meeting.f32
+node src/integration-test/whisper/meeting-accuracy.mjs /tmp/meeting.f32 meeting.txt
+```
+
+既定ではアプリのデフォルトモデルを使います。比較するモデル名は第3引数で指定できます。採点は Node.js 上で録音停止後と同じタイムスタンプ付き推論を使い、CER と 20% 以下かどうかを出力します。
+
+公開音声で比較する場合は、たとえばイングクラウドの [Japanese Travel Agency Roleplay Dialogue Corpus](https://huggingface.co/datasets/IngCrowd/japanese-roleplay-travel-agency)（CC BY-NC 4.0）を使えます。Zoom で収録された2話者のミックス音声を使い、ELAN の人手転記を発話の開始時刻順に並べます。音声を切り出す場合は、発話が途切れない位置で区切り、正解文も同じ区間に揃えます。モデル間の比較では録音区間と正解文を揃えます。
+
 ## 出典
 
 - Google FLEURS: <https://huggingface.co/datasets/google/fleurs/tree/70bb2e84b976b7e960aa89f1c648e09c59f894dd/data/ja_jp>
